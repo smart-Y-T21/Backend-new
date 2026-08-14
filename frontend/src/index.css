@@ -1,0 +1,16 @@
+/* frontend/src/index.css */
+
+/* 💥 灵魂重置：强行把浏览器的所有默认内嵌边距全部降维打击归零 */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000000; /* 确保全局底色纯黑，防止闪白 */
+  overflow: hidden;         /* 彻底锁死并抹平多余的滚动条 */
+}
+
+/* 保证所有元素的边框计算不会撑破页面 */
+* {
+  box-sizing: border-box;
+}

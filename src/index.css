@@ -1,0 +1,35 @@
+/* 彻底清除默认边距，实现无缝全面屏 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'JetBrains Mono', monospace, sans-serif;
+}
+
+body {
+  background-color: #000000;
+  color: #ffffff;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* 霓虹高亮色定义 */
+.text-up { color: #00f682 !important; }
+.text-down { color: #ff0055 !important; }
+.bg-up-dim { background-color: rgba(0, 246, 130, 0.03) !important; }
+.bg-down-dim { background-color: rgba(255, 0, 85, 0.03) !important; }
+
+/* 自定义滚动条 - 极致极客化 */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #020202;
+}
+::-webkit-scrollbar-thumb {
+  background: #141414;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #222;
+}
