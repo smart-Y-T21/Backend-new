@@ -1,0 +1,23 @@
+{
+  "name": "perpetual-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Sei Testnet EVM v2 contract deployment configuration",
+  "main": "hardhat.config.js",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy.js --network seiTestnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "@rainbow-me/rainbowkit": "^2.2.11",
+    "@tanstack/react-query": "^5.101.4",
+    "ethers": "^6.17.0",
+    "react-countup": "^6.5.3",
+    "viem": "^2.55.13",
+    "wagmi": "^3.7.6"
+  }
+}
