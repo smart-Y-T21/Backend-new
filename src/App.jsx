@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
+// 👇 引入看板组件
 
 // ==========================================
 // 🔌 生产级前端与合约通信契约层 (BridgeLab Engine)
@@ -86,6 +87,7 @@ const PriceDisplay = ({ price, currencySymbol = '$' }) => {
 };
 
 export default function App() {
+
   const [currentSide, setCurrentSide] = useState('buy');
   const [leverage, setLeverage] = useState(20);
   const [percentOption, setPercentOption] = useState(25);
@@ -162,92 +164,92 @@ export default function App() {
 
   // 🌟 资产大盘数据矩阵
   const [assets, setAssets] = useState([
-    { code: 'BTC', price: 98245.5, change: 2.4, up: true, cat: '比特币', isBtcEco: true, subCat: '24*7永续', currency: '$' },
-    { code: 'MSTR', price: 412.50, change: 8.2, up: true, cat: '比特币', isBtcEco: true, subCat: '美股BTC财库 · US', currency: '$' },
-    { code: 'IBIT', price: 38.20, change: 2.8, up: true, cat: '比特币', isBtcEco: true, subCat: 'iShares Bitcoin Trust ETF · Spot', currency: '$' },
-    { code: 'BITO', price: 21.45, change: 1.9, up: true, cat: '比特币', isBtcEco: true, subCat: 'ProShares Bitcoin ETF · Future', currency: '$' },
-    { code: 'MARA', price: 22.40, change: 4.5, up: true, cat: '比特币', isBtcEco: true, subCat: '美股BTC财库 · US', currency: '$' },
-    { code: 'RIOT', price: 11.20, change: 3.2, up: true, cat: '比特币', isBtcEco: true, subCat: '美股BTC财库 · US', currency: '$' },
-    { code: 'CLSK', price: 14.80, change: -1.5, up: false, cat: '比特币', isBtcEco: true, subCat: '美股BTC财库 · US', currency: '$' },
-    { code: 'HUT', price: 18.50, change: 5.1, up: true, cat: '比特币', isBtcEco: true, subCat: '美股BTC财库 · US', currency: '$' },
-    { code: 'METAPLANET', price: 220.00, change: 8.3, up: true, cat: '比特币', isBtcEco: true, subCat: '日股BTC财库 · JP', currency: '¥' },
+    { code: 'BTC', price: 98245.5, change: 2.4, up: true, cat: 'Crypto', isBtcEco: true, subCat: '24*7 Perpetual', currency: '$' },
+    { code: 'MSTR', price: 412.50, change: 8.2, up: true, cat: 'Crypto', isBtcEco: true, subCat: 'Bitcoin Treasury · US', currency: '$' },
+    { code: 'IBIT', price: 38.20, change: 2.8, up: true, cat: 'Crypto', isBtcEco: true, subCat: 'iShares Bitcoin Trust · Spot', currency: '$' },
+    { code: 'BITO', price: 21.45, change: 1.9, up: true, cat: 'Crypto', isBtcEco: true, subCat: 'ProShares Bitcoin ETF · Future', currency: '$' },
+    { code: 'MARA', price: 22.40, change: 4.5, up: true, cat: 'Crypto', isBtcEco: true, subCat: 'Bitcoin Treasury · US', currency: '$' },
+    { code: 'RIOT', price: 11.20, change: 3.2, up: true, cat: 'Crypto', isBtcEco: true, subCat: 'Bitcoin Treasury · US', currency: '$' },
+    { code: 'CLSK', price: 14.80, change: -1.5, up: false, cat: 'Crypto', isBtcEco: true, subCat: 'Bitcoin Treasury · US', currency: '$' },
+    { code: 'HUT', price: 18.50, change: 5.1, up: true, cat: 'Crypto', isBtcEco: true, subCat: 'Bitcoin Treasury · US', currency: '$' },
+    { code: 'METAPLANET', price: 220.00, change: 8.3, up: true, cat: 'Crypto', isBtcEco: true, subCat: 'Bitcoin Treasury · JP', currency: '¥' },
 
-    { code: 'ETH', price: 3452.1, change: -1.1, up: false, cat: '以太坊', isEthEco: true, subCat: '24*7永续', currency: '$' },
-    { code: 'ETHE', price: 28.50, change: 1.8, up: true, cat: '以太坊', isEthEco: true, subCat: 'Grayscale Ethereum Trust', currency: '$' },
-    { code: 'ETHA', price: 24.10, change: 2.1, up: true, cat: '以太坊', isEthEco: true, subCat: 'iShares Ethereum Trust', currency: '$' },
-    { code: 'FETH', price: 21.80, change: 1.5, up: true, cat: '以太坊', isEthEco: true, subCat: 'Fidelity Ethereum Fund', currency: '$' },
-    { code: 'SBET', price: 6.29, change: 0.0, up: true, cat: '以太坊', isEthEco: true, subCat: '美股ETH财库 · US', currency: '$' },
-    { code: 'BMNR', price: 15.50, change: 0.0, up: true, cat: '以太坊', isEthEco: true, subCat: '美股ETH财库 · US', currency: '$' },
-    { code: 'BTBT', price: 4.50, change: 0.0, up: true, cat: '以太坊', isEthEco: true, subCat: '美股ETH财库 · US', currency: '$' },
+    { code: 'ETH', price: 3452.1, change: -1.1, up: false, cat: 'Ethereum', isEthEco: true, subCat: '24*7 Perpetual', currency: '$' },
+    { code: 'ETHE', price: 28.50, change: 1.8, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'Grayscale Ethereum Trust', currency: '$' },
+    { code: 'ETHA', price: 24.10, change: 2.1, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'iShares Ethereum Trust', currency: '$' },
+    { code: 'FETH', price: 21.80, change: 1.5, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'Fidelity Ethereum Fund', currency: '$' },
+    { code: 'SBET', price: 6.29, change: 0.0, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'ETH Treasury · US', currency: '$' },
+    { code: 'BMNR', price: 15.50, change: 0.0, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'ETH Treasury · US', currency: '$' },
+    { code: 'BTBT', price: 4.50, change: 0.0, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'ETH Treasury · US', currency: '$' },
 
-    { name: 'HYPE', price: 28.50, change: 12.4, up: true, cat: '加密货币', currency: '$' },
-    { name: 'SOL', price: 192.40, change: 3.1, up: true, cat: '加密货币', currency: '$' },
-    { name: 'SEI', price: 0.6482, change: 5.8, up: true, cat: '加密货币', currency: '$' },
-    { name: 'SUI', price: 3.12, change: 8.2, up: true, cat: '加密货币', currency: '$' },
-    { name: 'NEAR', price: 5.45, change: -2.1, up: false, cat: '加密货币', currency: '$' },
-    { name: 'LINK', price: 18.20, change: 0.9, up: true, cat: '加密货币', currency: '$' },
-    { name: 'AVAX', price: 34.20, change: 1.5, up: true, cat: '加密货币', currency: '$' },
-    { name: 'APT', price: 11.85, change: 4.2, up: true, cat: '加密货币', currency: '$' },
-    { name: 'OP', price: 1.82, change: -3.4, up: false, cat: '加密货币', currency: '$' },
-    { name: 'ARB', price: 0.92, change: -1.5, up: false, cat: '加密货币', currency: '$' },
-    { name: 'TAO', price: 582.4, change: 6.1, up: true, cat: '加密货币', currency: '$' },
-    { name: 'BNB', price: 582.50, change: -0.4, up: false, cat: '加密货币', currency: '$' },
-    { name: 'XRP', price: 1.14, change: 12.5, up: true, cat: '加密货币', currency: '$' },
-    { name: 'ADA', price: 0.58, change: -0.8, up: false, cat: '加密货币', currency: '$' },
-    { name: 'RENDER', price: 8.42, change: 4.5, up: true, cat: '加密货币', currency: '$' },
-    { name: 'INJ', price: 24.10, change: 2.2, up: true, cat: '加密货币', currency: '$' },
-    { name: 'TIA', price: 6.25, change: -1.8, up: false, cat: '加密货币', currency: '$' },
+    { name: 'HYPE', price: 28.50, change: 12.4, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'SOL', price: 192.40, change: 3.1, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'SEI', price: 0.6482, change: 5.8, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'SUI', price: 3.12, change: 8.2, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'NEAR', price: 5.45, change: -2.1, up: false, cat: 'Altcoins', currency: '$' },
+    { name: 'LINK', price: 18.20, change: 0.9, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'AVAX', price: 34.20, change: 1.5, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'APT', price: 11.85, change: 4.2, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'OP', price: 1.82, change: -3.4, up: false, cat: 'Altcoins', currency: '$' },
+    { name: 'ARB', price: 0.92, change: -1.5, up: false, cat: 'Altcoins', currency: '$' },
+    { name: 'TAO', price: 582.4, change: 6.1, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'BNB', price: 582.50, change: -0.4, up: false, cat: 'Altcoins', currency: '$' },
+    { name: 'XRP', price: 1.14, change: 12.5, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'ADA', price: 0.58, change: -0.8, up: false, cat: 'Altcoins', currency: '$' },
+    { name: 'RENDER', price: 8.42, change: 4.5, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'INJ', price: 24.10, change: 2.2, up: true, cat: 'Altcoins', currency: '$' },
+    { name: 'TIA', price: 6.25, change: -1.8, up: false, cat: 'Altcoins', currency: '$' },
 
-    { name: 'NVDA', price: 195.04, change: 1.5, up: true, cat: '美股', currency: '$' },
-    { name: 'TSLA', price: 308.85, change: -1.2, up: false, cat: '美股', currency: '$' },
-    { name: 'AAPL', price: 333.43, change: 0.8, up: true, cat: '美股', currency: '$' },
-    { name: 'MSFT', price: 448.20, change: -0.5, up: false, cat: '美股', currency: '$' },
-    { name: 'AMZN', price: 215.60, change: 1.4, up: true, cat: '美股', currency: '$' },
-    { name: 'GOOGL', price: 184.50, change: 0.6, up: true, cat: '美股', currency: '$' },
-    { name: 'META', price: 545.20, change: 2.1, up: true, cat: '美股', currency: '$' },
-    { name: 'COIN', price: 265.40, change: 4.8, up: true, cat: '美股', currency: '$' },
-    { name: 'NFLX', price: 712.00, change: 1.1, up: true, cat: '美股', currency: '$' },
-    { name: 'AMD', price: 162.10, change: -2.0, up: false, cat: '美股', currency: '$' },
-    { name: 'INTC', price: 22.40, change: -0.8, up: false, cat: '美股', currency: '$' },
+    { name: 'NVDA', price: 195.04, change: 1.5, up: true, cat: 'US Equities', currency: '$' },
+    { name: 'TSLA', price: 308.85, change: -1.2, up: false, cat: 'US Equities', currency: '$' },
+    { name: 'AAPL', price: 333.43, change: 0.8, up: true, cat: 'US Equities', currency: '$' },
+    { name: 'MSFT', price: 448.20, change: -0.5, up: false, cat: 'US Equities', currency: '$' },
+    { name: 'AMZN', price: 215.60, change: 1.4, up: true, cat: 'US Equities', currency: '$' },
+    { name: 'GOOGL', price: 184.50, change: 0.6, up: true, cat: 'US Equities', currency: '$' },
+    { name: 'META', price: 545.20, change: 2.1, up: true, cat: 'US Equities', currency: '$' },
+    { name: 'COIN', price: 265.40, change: 4.8, up: true, cat: 'US Equities', currency: '$' },
+    { name: 'NFLX', price: 712.00, change: 1.1, up: true, cat: 'US Equities', currency: '$' },
+    { name: 'AMD', price: 162.10, change: -2.0, up: false, cat: 'US Equities', currency: '$' },
+    { name: 'INTC', price: 22.40, change: -0.8, up: false, cat: 'US Equities', currency: '$' },
 
-    { name: 'BABA', price: 92.50, change: -1.2, up: false, cat: '中概股', currency: '$' },
-    { name: 'PDD', price: 128.40, change: 3.5, up: true, cat: '中概股', currency: '$' },
-    { name: 'TCEHY', price: 58.20, change: 1.5, up: true, cat: '中概股', currency: '$' },
-    { name: 'JD', price: 32.10, change: 0.8, up: true, cat: '中概股', currency: '$' },
-    { name: 'BIDU', price: 94.50, change: -0.6, up: false, cat: '中概股', currency: '$' },
-    { name: 'NIO', price: 5.20, change: -3.4, up: false, cat: '中概股', currency: '$' },
-    { name: 'XPEV', price: 11.80, change: 2.9, up: true, cat: '中概股', currency: '$' },
-    { name: 'LI', price: 26.50, change: 2.1, up: true, cat: '中概股', currency: '$' },
-    { name: 'BILI', price: 21.40, change: 4.2, up: true, cat: '中概股', currency: '$' },
-    { name: 'TME', price: 12.80, change: 0.5, up: true, cat: '中概股', currency: '$' },
+    { name: 'BABA', price: 92.50, change: -1.2, up: false, cat: 'Chinese ADRs', currency: '$' },
+    { name: 'PDD', price: 128.40, change: 3.5, up: true, cat: 'Chinese ADRs', currency: '$' },
+    { name: 'TCEHY', price: 58.20, change: 1.5, up: true, cat: 'Chinese ADRs', currency: '$' },
+    { name: 'JD', price: 32.10, change: 0.8, up: true, cat: 'Chinese ADRs', currency: '$' },
+    { name: 'BIDU', price: 94.50, change: -0.6, up: false, cat: 'Chinese ADRs', currency: '$' },
+    { name: 'NIO', price: 5.20, change: -3.4, up: false, cat: 'Chinese ADRs', currency: '$' },
+    { name: 'XPEV', price: 11.80, change: 2.9, up: true, cat: 'Chinese ADRs', currency: '$' },
+    { name: 'LI', price: 26.50, change: 2.1, up: true, cat: 'Chinese ADRs', currency: '$' },
+    { name: 'BILI', price: 21.40, change: 4.2, up: true, cat: 'Chinese ADRs', currency: '$' },
+    { name: 'TME', price: 12.80, change: 0.5, up: true, cat: 'Chinese ADRs', currency: '$' },
 
-    { code: 'HSI', displayName: '恒生指数 · HSI', price: 19850.00, change: 1.2, up: true, cat: '港股', subCat: '恒生指数 · 港股大盘', currency: 'HK$' },
-    { code: '00001', displayName: '长和 · 00001', price: 38.50, change: 0.8, up: true, cat: '港股', subCat: '长江和记实业 · 老牌巨头', currency: 'HK$' },
-    { code: '00005', displayName: '汇丰 · 00005', price: 68.20, change: 1.1, up: true, cat: '港股', subCat: '汇丰控股 · 国际金融', currency: 'HK$' },
-    { code: '01299', displayName: '友邦 · 01299', price: 54.00, change: -0.5, up: false, cat: '港股', subCat: '友邦保险 · 亚洲保险巨头', currency: 'HK$' },
-    { code: '00700', displayName: '腾讯 · 00700', price: 412.00, change: 1.8, up: true, cat: '港股', subCat: '腾讯控股 · 港股科技', currency: 'HK$' },
-    { code: '03690', displayName: '美团 · 03690', price: 135.50, change: -0.8, up: false, cat: '港股', subCat: '美团-W · 本地商业', currency: 'HK$' },
-    { code: '01810', displayName: '小米 · 01810', price: 28.40, change: 4.5, up: true, cat: '港股', subCat: '小米集团-W · 智能生态', currency: 'HK$' },
-    { code: '09988', displayName: '阿里 · 09988', price: 92.80, change: -1.0, up: false, cat: '港股', subCat: '阿里巴巴-W · 港股主板', currency: 'HK$' },
-    { code: '00981', displayName: '中芯 · 00981', price: 26.50, change: 3.2, up: true, cat: '港股', subCat: '中芯国际 · 半导体制造', currency: 'HK$' },
-    { code: '02015', displayName: '理想 · 02015', price: 94.50, change: 2.4, up: true, cat: '港股', subCat: '理想汽车-W · 新能源港股', currency: 'HK$' },
-    { code: '09888', displayName: '百度 · 09888', price: 88.50, change: -0.5, up: false, cat: '港股', subCat: '百度集团-SW · AI与搜索', currency: 'HK$' },
-    { code: '00388', displayName: '港交所 · 00388', price: 298.00, change: 1.5, up: true, cat: '港股', subCat: '香港交易所 · 港股核心', currency: 'HK$' },
+    { name: 'HSI', displayName: 'HSI', backendCode: 'HSI', price: 19850.00, change: 1.2, up: true, cat: 'HK Equities', subCat: 'Hang Seng Index · Benchmark', currency: 'HKD ' },
+    { name: 'CKH', displayName: 'CK Hutchison', backendCode: '00001', price: 38.50, change: 0.8, up: true, cat: 'HK Equities', subCat: 'CK Hutchison Holdings', currency: 'HKD ' },
+    { name: 'HSBC_HK', displayName: 'HSBC', backendCode: '00005', price: 68.20, change: 1.1, up: true, cat: 'HK Equities', subCat: 'HSBC Holdings plc', currency: 'HKD ' },
+    { name: 'AIA', displayName: 'AIA', backendCode: '01299', price: 54.00, change: -0.5, up: false, cat: 'HK Equities', subCat: 'AIA Group Limited', currency: 'HKD ' },
+    { name: 'TENCENT', displayName: 'Tencent', backendCode: '00700', price: 412.00, change: 1.8, up: true, cat: 'HK Equities', subCat: 'Tencent Holdings', currency: 'HKD ' },
+    { name: 'MEITUAN', displayName: 'Meituan', backendCode: '03690', price: 135.50, change: -0.8, up: false, cat: 'HK Equities', subCat: 'Meituan-W', currency: 'HKD ' },
+    { name: 'XIAOMI', displayName: 'Xiaomi', backendCode: '01810', price: 28.40, change: 4.5, up: true, cat: 'HK Equities', subCat: 'Xiaomi Corporation-W', currency: 'HKD ' },
+    { name: 'ALIBABA_HK', displayName: 'Alibaba', backendCode: '09988', price: 92.80, change: -1.0, up: false, cat: 'HK Equities', subCat: 'Alibaba Group-SW', currency: 'HKD ' },
+    { name: 'SMIC', displayName: 'SMIC', backendCode: '00981', price: 26.50, change: 3.2, up: true, cat: 'HK Equities', subCat: 'Semiconductor Manufacturing', currency: 'HKD ' },
+    { name: 'LIAUTO', displayName: 'Li Auto', backendCode: '02015', price: 94.50, change: 2.4, up: true, cat: 'HK Equities', subCat: 'Li Auto Inc-W', currency: 'HKD ' },
+    { name: 'BAIDU_HK', displayName: 'Baidu', backendCode: '09888', price: 88.50, change: -0.5, up: false, cat: 'HK Equities', subCat: 'Baidu Inc-SW', currency: 'HKD ' },
+    { name: 'HKEX', displayName: 'HKEX', backendCode: '00388', price: 298.00, change: 1.5, up: true, cat: 'HK Equities', subCat: 'Hong Kong Exchanges and Clearing', currency: 'HKD ' },
 
-    { name: 'USD/CNH', price: 7.2450, change: 0.1, up: true, cat: '宏观', currency: '$' },
-    { name: 'DXY', price: 104.20, change: -0.2, up: false, cat: '宏观', currency: '$' },
-    { name: 'EUR/USD', price: 1.0890, change: 0.1, up: true, cat: '宏观', currency: '$' },
-    { name: 'GBP/USD', price: 1.2840, change: 0.2, up: true, cat: '宏观', currency: '$' },
-    { name: 'USD/JPY', price: 154.10, change: 0.4, up: true, cat: '宏观', currency: '$' },
-    { name: 'AUD/USD', price: 0.6650, change: -0.1, up: false, cat: '宏观', currency: '$' },
-    { name: 'USD/CHF', price: 0.8790, change: 0.1, up: true, cat: '宏观', currency: '$' },
-    { name: 'NZD/USD', price: 0.6080, change: -0.2, up: false, cat: '宏观', currency: '$' },
-    { name: 'USD/CAD', price: 1.3650, change: 0.1, up: true, cat: '宏观', currency: '$' },
-    { name: 'GOLD', price: 4086.20, change: 0.6, up: true, cat: '宏观', currency: '$' },
-    { name: 'OIL', price: 78.40, change: 1.2, up: true, cat: '宏观', currency: '$' },
-    { name: 'SILVER', price: 28.50, change: 0.9, up: true, cat: '宏观', currency: '$' },
-    { name: 'PLATINUM', price: 1010.0, change: 0.5, up: true, cat: '宏观', currency: '$' },
-    { name: 'PALLADIUM', price: 985.0, change: -0.4, up: false, cat: '宏观', currency: '$' },
+    { name: 'USD/CNH', price: 7.2450, change: 0.1, up: true, cat: 'Macro', currency: '$' },
+    { name: 'DXY', price: 104.20, change: -0.2, up: false, cat: 'Macro', currency: '$' },
+    { name: 'EUR/USD', price: 1.0890, change: 0.1, up: true, cat: 'Macro', currency: '$' },
+    { name: 'GBP/USD', price: 1.2840, change: 0.2, up: true, cat: 'Macro', currency: '$' },
+    { name: 'USD/JPY', price: 154.10, change: 0.4, up: true, cat: 'Macro', currency: '$' },
+    { name: 'AUD/USD', price: 0.6650, change: -0.1, up: false, cat: 'Macro', currency: '$' },
+    { name: 'USD/CHF', price: 0.8790, change: 0.1, up: true, cat: 'Macro', currency: '$' },
+    { name: 'NZD/USD', price: 0.6080, change: -0.2, up: false, cat: 'Macro', currency: '$' },
+    { name: 'USD/CAD', price: 1.3650, change: 0.1, up: true, cat: 'Macro', currency: '$' },
+    { name: 'GOLD', price: 4086.20, change: 0.6, up: true, cat: 'Macro', currency: '$' },
+    { name: 'OIL', price: 78.40, change: 1.2, up: true, cat: 'Macro', currency: '$' },
+    { name: 'SILVER', price: 28.50, change: 0.9, up: true, cat: 'Macro', currency: '$' },
+    { name: 'PLATINUM', price: 1010.0, change: 0.5, up: true, cat: 'Macro', currency: '$' },
+    { name: 'PALLADIUM', price: 985.0, change: -0.4, up: false, cat: 'Macro', currency: '$' },
 
     { name: 'SPY', price: 595.20, change: 0.6, up: true, cat: 'ETF', currency: '$' },
     { name: 'QQQ', price: 518.40, change: 0.9, up: true, cat: 'ETF', currency: '$' },
@@ -270,11 +272,11 @@ export default function App() {
   const [selectedAsset, setSelectedAsset] = useState(assets[0]);
 
   const isCryptoOrMeme = selectedAsset && (
-    selectedAsset.cat === '加密货币' || 
+    selectedAsset.cat === 'Altcoins' || 
     selectedAsset.code === 'BTC' || 
     selectedAsset.code === 'ETH' || 
-    selectedAsset.cat === '比特币' || 
-    selectedAsset.cat === '以太坊'
+    selectedAsset.cat === 'Crypto' || 
+    selectedAsset.cat === 'Ethereum'
   ) && !selectedAsset.isEvent;
 
   const maxAllowedLeverage = isCryptoOrMeme ? 30 : 10;
@@ -298,7 +300,8 @@ export default function App() {
 
           setAssets(prevAssets => 
             prevAssets.map(asset => {
-              const realPrice = remotePrices[asset.code] !== undefined ? remotePrices[asset.code] : remotePrices[asset.name];
+             const fetchKey = asset.backendCode || asset.code || asset.name;
+             const realPrice = remotePrices[fetchKey] !== undefined ? remotePrices[fetchKey] : remotePrices[asset.name];
               
               if (realPrice !== undefined && !isNaN(realPrice)) {
                 const oldPrice = asset.price;
@@ -315,7 +318,7 @@ export default function App() {
           );
         }
       } catch (e) {
-        console.error("⚠️ 联通 Python 做市后端网关异常:", e);
+        console.error("⚠️ Failed to connect Python market maker gateway:", e);
       }
     };
 
@@ -337,7 +340,7 @@ export default function App() {
         if (isLiquidated) hasLiquidated = true;
         else remainingPositions.push(pos);
       });
-      if (hasLiquidated) alert("⚠️ 提示：您的部分仓位已触及强平价，系统已执行智能风控平仓。");
+      if (hasLiquidated) alert("⚠️ Notice: Part of your positions reached the liquidation price and have been liquidated by risk management.");
       return remainingPositions;
     });
   }, [assets]);
@@ -375,7 +378,7 @@ export default function App() {
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
     if (!tempEmailInput) {
-      alert("请输入有效的邮箱地址！");
+      alert("Please enter a valid email address!");
       return;
     }
     const email = tempEmailInput.trim();
@@ -411,7 +414,7 @@ export default function App() {
     setDepositBalance(0);
     setAvailableMarginRaw(0);
     setPositions([]);
-    alert("已成功退出登录！");
+    alert("Logged out successfully!");
   };
 
   const checkBalance = async () => {
@@ -435,7 +438,7 @@ export default function App() {
       const parsedBalance = parseInt(balanceResult, 16) / 1_000_000;
       setSeiBalance(parsedBalance);
     } catch (error) {
-      console.error("获取链上余额失败", error);
+      console.error("Failed to fetch chain balance", error);
       setSeiBalance(0);
     } finally {
       setIsCheckingBalance(false);
@@ -466,23 +469,23 @@ export default function App() {
         setAvailableMarginRaw(1000);
         setHasClaimed(true);
         setIsClaiming(false);
-        alert("成功领取 1000 USDC 新手空投（仅限杠杆交易，不可提现）！");
+        alert("Successfully claimed 1000 USDC Newbie Airdrop (For leveraged trading only, non-withdrawable)!");
         setDepositModalOpen(false);
       }, 600);
     } else {
       const amt = parseFloat(depositInput);
       if (isNaN(amt) || amt <= 0) {
-        alert("请输入有效的充值金额！");
+        alert("Please enter a valid deposit amount!");
         return;
       }
 
       if (!isRealLive && airdropBalance > 0) {
-        const confirmReal = window.confirm("⚠️ 提示：您正在进行第一次实盘充值。充值后将正式进入实盘交易，此前领取的空投及虚拟盘数据将被重置。是否继续？");
+        const confirmReal = window.confirm("⚠️ Notice: You are making your first live deposit. This will switch your account to Live Trading mode, and previous airdrop/demo data will be reset. Continue?");
         if (!confirmReal) return;
       }
 
       if (!window.ethereum) {
-        alert("未检测到小狐狸钱包！");
+        alert("MetaMask not detected!");
         return;
       }
 
@@ -504,7 +507,7 @@ export default function App() {
         const userBalance = parseInt(balanceResult, 16) / 1_000_000;
 
         if (userBalance < amt) {
-          alert(`余额不足！你当前只有 ${userBalance} USDC，请先去领取测试币。`);
+          alert(`Insufficient balance! You currently have ${userBalance} USDC, please claim test tokens first.`);
           setIsClaiming(false);
           return; 
         }
@@ -534,12 +537,12 @@ export default function App() {
         setAvailableMarginRaw(amt);
 
         setIsClaiming(false);
-        alert(`✓ 成功通过小狐狸充值 ${amt} USDC，已正式锁定实盘交易！`);
+        alert(`✓ Successfully deposited ${amt} USDC via MetaMask, live trading locked!`);
         setDepositInput('');
         setDepositModalOpen(false);
       } catch (err) {
         console.error(err);
-        alert("充值操作取消或链上交易失败");
+        alert("Deposit cancelled or on-chain transaction failed");
         setIsClaiming(false);
       }
     }
@@ -548,16 +551,16 @@ export default function App() {
   const handleWithdrawSubmit = async () => {
     const amt = parseFloat(withdrawAmountInput);
     if (isNaN(amt) || amt <= 0) {
-      alert("请输入有效的提现金额！");
+      alert("Please enter a valid withdrawal amount!");
       return;
     }
     if (amt > withdrawableBalance) {
-      alert(`提现额度超限！您当前最多可提现 $${withdrawableBalance.toFixed(2)}。`);
+      alert(`Withdrawal limit exceeded! You can withdraw a maximum of $${withdrawableBalance.toFixed(2)}.`);
       return;
     }
 
     if (!window.ethereum) {
-      alert("未检测到小狐狸钱包！");
+      alert("MetaMask not detected!");
       return;
     }
 
@@ -590,10 +593,10 @@ export default function App() {
       setWithdrawModalOpen(false);
       setIsWithdrawing(false);
 
-      alert(`✓ 链上提现成功！已将 ${amt} USDC 退回您的 MetaMask 钱包。\nTxHash: ${txHash.slice(0, 10)}...`);
+      alert(`✓ On-chain withdrawal successful! Returned ${amt} USDC to your MetaMask wallet.\nTxHash: ${txHash.slice(0, 10)}...`);
     } catch (error) {
-      console.error("提现取消或链上交易失败", error);
-      alert("提现操作已被用户取消或链上交易失败");
+      console.error("Withdrawal cancelled or transaction failed", error);
+      alert("Withdrawal cancelled by user or transaction failed");
       setIsWithdrawing(false);
     }
   };
@@ -607,7 +610,7 @@ export default function App() {
 
     const currentMarginPaid = getMarginPaid();
     if (currentMarginPaid <= 0 || currentMarginPaid > availableMargin) {
-      alert("可用保证金不足！请先充值 USDC。");
+      alert("Insufficient available margin! Please deposit USDC first.");
       return;
     }
 
@@ -616,12 +619,11 @@ export default function App() {
 
     try {
       if (!window.ethereum) {
-        alert("未检测到小狐狸钱包！");
+        alert("MetaMask not detected!");
         setModalOpen(false);
         return;
       }
 
-      // 使用 ethers.js 连接本地 Anvil 节点与刚部署的合约
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
@@ -630,9 +632,8 @@ export default function App() {
       const sizeParsed = ethers.parseUnits(((currentMarginPaid * leverage) / currentAssetPrice).toFixed(4), 18);
       const priceParsed = ethers.parseUnits(currentAssetPrice.toString(), 18);
 
-      console.log("正在调用链上合约 placeOrder...", selectedAsset.code, isLong, leverage);
+      console.log("Calling on-chain contract placeOrder...", selectedAsset.code, isLong, leverage);
       
-      // 真实发送链上交易到部署的合约
       const tx = await contract.placeOrder(
         selectedAsset.code,
         isLong,
@@ -641,7 +642,7 @@ export default function App() {
         leverage
       );
       
-      console.log("交易已广播，等待上链确认...", tx.hash);
+      console.log("Transaction broadcasted, waiting for confirmation...", tx.hash);
       await tx.wait();
 
       setModalStatus('success');
@@ -668,8 +669,8 @@ export default function App() {
       setPositions(prev => [newPos, ...prev]);
 
     } catch (err) {
-      console.error("链上合约调用失败:", err);
-      alert("链上开仓失败或用户取消签名：" + (err.reason || err.message));
+      console.error("Smart contract call failed:", err);
+      alert("On-chain order failed or signature cancelled: " + (err.reason || err.message));
       setModalOpen(false);
     }
   };
@@ -690,7 +691,7 @@ export default function App() {
         await tx.wait();
       }
     } catch (e) {
-      console.error("链上平仓交易失败，同步本地更新", e);
+      console.error("On-chain close position failed, syncing locally", e);
     }
 
     const pnl = target.side === 'buy'
@@ -715,7 +716,7 @@ export default function App() {
     const code = asset.code;
     const cat = asset.cat;
 
-    if (cat === '港股') {
+    if (cat === 'HK Equities') {
       if (code === 'HSI') return 'TVC:HSI';
       const cleanCode = parseInt(code, 10);
       return `HKEX:${cleanCode}`;
@@ -726,7 +727,7 @@ export default function App() {
     if (code === 'ETHE') return 'ARCA:ETHE';
     if (code === 'HYPE') return 'BINANCE:HYPEUSDT';
 
-    if (cat === '比特币') {
+    if (cat === 'Crypto') {
       if (code === 'BTC') return 'BINANCE:BTCUSDT';
       if (code === 'IBIT') return 'NASDAQ:IBIT';
       if (code === 'BITO') return 'AMEX:BITO';
@@ -737,7 +738,7 @@ export default function App() {
       if (code === 'HUT') return 'NASDAQ:HUT';
       return 'BINANCE:BTCUSDT'; 
     }
-    if (cat === '以太坊') {
+    if (cat === 'Ethereum') {
       if (code === 'ETH') return 'BINANCE:ETHUSDT';
       if (code === 'ETHA') return 'NASDAQ:ETHA';
       if (code === 'FETH') return 'CBOE:FETH';
@@ -746,9 +747,9 @@ export default function App() {
     }
     if (code === 'GOLD') return 'OANDA:XAUUSD';
     if (code === 'SPY') return 'AMEX:SPY';
-    if (cat === '美股') return `NASDAQ:${code}`;
-    if (cat === '中概股') return `NYSE:${code}`;
-    if (cat === '宏观') {
+    if (cat === 'US Equities') return `NASDAQ:${code}`;
+    if (cat === 'Chinese ADRs') return `NYSE:${code}`;
+    if (cat === 'Macro') {
       if (code === 'USD/CNH') return 'FX:USDCNH';
       if (code === 'DXY') return 'TVC:DXY';
       if (code === 'EUR/USD') return 'FX:EURUSD';
@@ -800,11 +801,11 @@ export default function App() {
   const orderBook = generateOrderBook();
 
   const getCatColor = (cat) => {
-    if (cat === '加密货币') return '#00e5ff';
-    if (cat === '美股') return '#ffd166';
-    if (cat === '中概股') return '#ff9f43';
-    if (cat === '港股') return '#10b981';
-    if (cat === '宏观') return '#00f2fe';
+    if (cat === 'Altcoins') return '#00e5ff';
+    if (cat === 'US Equities') return '#ffd166';
+    if (cat === 'Chinese ADRs') return '#ff9f43';
+    if (cat === 'HK Equities') return '#10b981';
+    if (cat === 'Macro') return '#00f2fe';
     if (cat === 'ETF') return '#9d4edd';
     return '#888888';
   };
@@ -839,7 +840,7 @@ export default function App() {
       fontSize: '14px'
     }}>
       
-      {/* 顶部导航 */}
+     {/* 顶部导航 */}
       <header style={{
         height: '52px',
         backgroundColor: '#050505',
@@ -869,7 +870,7 @@ export default function App() {
             borderRadius: '4px',
             letterSpacing: '1px'
           }}>
-            万物皆可 24*7*365 连续交易 (SEI TESTNET已联通)
+            24*7*365 Continuous Trading
           </div>
         </div>
 
@@ -894,7 +895,7 @@ export default function App() {
                 boxShadow: '0 0 10px rgba(255, 105, 180, 0.3)'
               }}
             >
-              邮箱注册 / 登录
+              Email Sign In / Register
             </button>
           ) : (
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -911,7 +912,7 @@ export default function App() {
                   borderRadius: '4px'
                 }}
               >
-                {isRealLive ? '充值 USDC' : (hasClaimed ? '充值 USDC' : '+ 领取 1000 USDC')}
+                {isRealLive ? 'Deposit USDC' : (hasClaimed ? 'Deposit USDC' : '+ Claim 1000 USDC')}
               </button>
               <div style={{
                 backgroundColor: '#111',
@@ -938,7 +939,7 @@ export default function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  退出
+                  Logout
                 </button>
               </div>
             </div>
@@ -961,7 +962,7 @@ export default function App() {
           <div style={{ padding: '10px', borderBottom: '1px solid #141414', backgroundColor: '#050505' }}>
             <input 
               type="text" 
-              placeholder="搜索合成资产..." 
+              placeholder="Search synthetic assets..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -1112,23 +1113,23 @@ export default function App() {
           
           <div className="custom-scrollbar" style={{ height: '44%', padding: '10px 12px', overflowY: 'auto', backgroundColor: '#000' }}>
             <div style={{ color: '#ff69b4', fontSize: '13px', fontWeight: 'bold', marginBottom: '6px', letterSpacing: '1px' }}>
-              ● 当前持仓 ({positions.length}) {isRealLive ? <span style={{color: '#00875a', fontSize: '11px'}}>⚡ 链上合约实盘中</span> : <span style={{color: '#f7931a', fontSize: '11px'}}>🧪 虚拟盘体验中</span>}
+              ● Current Positions ({positions.length}) {isRealLive ? <span style={{color: '#00875a', fontSize: '11px'}}>⚡ On-Chain Live Trading</span> : <span style={{color: '#f7931a', fontSize: '11px'}}>🧪 Demo Trading Mode</span>}
             </div>
             {positions.length === 0 ? (
               <div style={{ color: '#666', fontSize: '13px', textAlign: 'center', marginTop: '15px' }}>
-                暂无持仓，请在右侧面板下单。
+                No active positions. Place an order from the right panel.
               </div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ color: '#666', borderBottom: '1px solid #141414', height: '26px', fontSize: '12px' }}>
-                    <th style={{ textAlign: 'left' }}>市场</th>
-                    <th style={{ textAlign: 'center' }}>方向</th>
-                    <th style={{ textAlign: 'right' }}>数量</th>
-                    <th style={{ textAlign: 'right' }}>开仓价</th>
-                    <th style={{ textAlign: 'right' }}>未实现盈亏 (USDC)</th>
-                    <th style={{ textAlign: 'right' }}>强平价</th>
-                    <th style={{ textAlign: 'center' }}>操作</th>
+                    <th style={{ textAlign: 'left' }}>Market</th>
+                    <th style={{ textAlign: 'center' }}>Side</th>
+                    <th style={{ textAlign: 'right' }}>Size</th>
+                    <th style={{ textAlign: 'right' }}>Entry Price</th>
+                    <th style={{ textAlign: 'right' }}>Unrealized PnL (USDC)</th>
+                    <th style={{ textAlign: 'right' }}>Liq. Price</th>
+                    <th style={{ textAlign: 'center' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1145,14 +1146,14 @@ export default function App() {
                       <tr key={idx} style={{ borderBottom: '1px solid #111', height: '34px', fontSize: '13px' }}>
                         <td style={{ color: '#b0b0b0' }}><strong>{pos.code}</strong> <span style={{color: '#666', fontSize: '11px'}}>{pos.leverage}x</span></td>
                         <td style={{ textAlign: 'center', color: pos.side === 'buy' ? '#00875a' : '#ff0055', fontWeight: 'bold' }}>
-                          {pos.side === 'buy' ? '做多' : '做空'}
+                          {pos.side === 'buy' ? 'LONG' : 'SHORT'}
                         </td>
                         <td style={{ textAlign: 'right', color: '#b0b0b0' }}>{pos.size} {pos.code}</td>
                         <td style={{ textAlign: 'right', color: '#888' }}>{pos.entryPrice}</td>
                         <td style={{ textAlign: 'right', color: isProfit ? '#00875a' : '#ff0055', fontWeight: 'bold' }}>
                           {isProfit ? '+' : ''}{pnl.toFixed(2)} USDC ({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)
                         </td>
-                        <td style={{ textAlign: 'right', color: '#ff0055', fontWeight: 'bold' }}>{pos.liqPrice === 0 ? '无 (1x)' : pos.liqPrice}</td>
+                        <td style={{ textAlign: 'right', color: '#ff0055', fontWeight: 'bold' }}>{pos.liqPrice === 0 ? 'None (1x)' : pos.liqPrice}</td>
                         <td style={{ textAlign: 'center' }}>
                           <button 
                             onClick={() => handleClosePosition(idx)}
@@ -1166,7 +1167,7 @@ export default function App() {
                               fontWeight: 'bold'
                             }}
                           >
-                            平仓
+                            Close
                           </button>
                         </td>
                       </tr>
@@ -1191,9 +1192,9 @@ export default function App() {
         }}>
           
           <div style={{ display: 'flex', gap: '6px', backgroundColor: '#050505', padding: '5px', border: '1px solid #141414', boxSizing: 'border-box', width: '100%' }}>
-            <span style={{ flex: 1, textAlign: 'center', padding: '4px', backgroundColor: '#111', color: '#b0b0b0', fontSize: '12px', fontWeight: 'bold' }}>全仓</span>
+            <span style={{ flex: 1, textAlign: 'center', padding: '4px', backgroundColor: '#111', color: '#b0b0b0', fontSize: '12px', fontWeight: 'bold' }}>Cross</span>
             <span style={{ flex: 1, textAlign: 'center', padding: '4px', backgroundColor: '#111', color: '#ff69b4', fontSize: '12px', fontWeight: 'bold' }}>{leverage}x</span>
-            <span style={{ flex: 1, textAlign: 'center', padding: '4px', backgroundColor: '#111', color: '#888', fontSize: '12px', fontWeight: 'bold' }}>链上账户</span>
+            <span style={{ flex: 1, textAlign: 'center', padding: '4px', backgroundColor: '#111', color: '#888', fontSize: '12px', fontWeight: 'bold' }}>On-Chain</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
@@ -1210,7 +1211,7 @@ export default function App() {
               borderRadius: '4px',
               boxShadow: '0 0 10px rgba(255, 105, 180, 0.15)'
             }}>
-              <span style={{ color: '#aaa', fontSize: '12px', fontWeight: 'bold' }}>当前交易标的</span>
+              <span style={{ color: '#aaa', fontSize: '12px', fontWeight: 'bold' }}>Selected Asset</span>
               <strong style={{ color: '#ff69b4', fontSize: '15px', letterSpacing: '1px' }}>
                 {selectedAsset ? selectedAsset.code : ''}
               </strong>
@@ -1227,7 +1228,7 @@ export default function App() {
                 color: currentSide === 'buy' ? '#fff' : '#666',
                 fontSize: '13px',
                 textAlign: 'center'
-              }}>买入 / 做多</button>
+              }}>Buy / Long</button>
               <button onClick={() => setCurrentSide('sell')} style={{
                 flex: 1,
                 padding: '9px 0',
@@ -1238,23 +1239,23 @@ export default function App() {
                 color: currentSide === 'sell' ? '#fff' : '#666',
                 fontSize: '13px',
                 textAlign: 'center'
-              }}>卖出 / 做空</button>
+              }}>Sell / Short</button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '6px 10px', backgroundColor: '#050505', border: '1px solid #141414', fontSize: '12px', fontWeight: 'normal', boxSizing: 'border-box', width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <span style={{ color: '#888' }}>可用保证金</span>
+                <span style={{ color: '#888' }}>Available Margin</span>
                 <span style={{ color: '#00875a', fontWeight: 'bold', fontVariantNumeric: 'tabular-nums' }}>${availableMargin.toFixed(2)} USDC</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <span style={{ color: '#888' }}>可提现余额</span>
+                <span style={{ color: '#888' }}>Withdrawable Bal.</span>
                 <span style={{ color: '#ff69b4', fontWeight: 'bold', fontVariantNumeric: 'tabular-nums' }}>${withdrawableBalance.toFixed(2)} USDC</span>
               </div>
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <span style={{ color: '#666', fontSize: '11px', fontWeight: 'bold' }}>仓位规模 / 保证金</span>
+                <span style={{ color: '#666', fontSize: '11px', fontWeight: 'bold' }}>Position Size / Margin</span>
                 <span style={{ color: '#888', fontSize: '11px', fontVariantNumeric: 'tabular-nums' }}>~{notionalSize.toFixed(2)} {selectedAsset ? selectedAsset.code : ''}</span>
               </div>
               
@@ -1299,7 +1300,7 @@ export default function App() {
               }}>
                 <input 
                   type="number" 
-                  placeholder="手动输入保证金..." 
+                  placeholder="Custom margin amount..." 
                   value={customMarginInput} 
                   onChange={(e) => setCustomMarginInput(e.target.value)} 
                   className="custom-margin-input"
@@ -1320,7 +1321,7 @@ export default function App() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '100%', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666', fontSize: '12px', fontWeight: 'bold', width: '100%' }}>
-                <span>选择杠杆倍数 {isCryptoOrMeme ? '(加密/MEME最高30x)' : '(金融资产最高10x)'}</span>
+                <span>Leverage {isCryptoOrMeme ? '(Crypto/Meme up to 30x)' : '(Equities up to 10x)'}</span>
                 <strong style={{ color: '#ff69b4', fontVariantNumeric: 'tabular-nums' }}>{leverage}x</strong>
               </div>
 
@@ -1358,14 +1359,14 @@ export default function App() {
           {/* 3. 订单薄 */}
           <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #141414', padding: '6px 8px', boxSizing: 'border-box', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', width: '100%' }}>
-              <span style={{ color: '#666', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>订单薄</span>
+              <span style={{ color: '#666', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>Order Book</span>
               <span style={{ color: '#888', fontSize: '11px' }}>{selectedAsset ? selectedAsset.code : ''}/USDT</span>
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666', fontSize: '11px', borderBottom: '1px solid #111', paddingBottom: '2px', width: '100%' }}>
-              <span>价格</span>
-              <span style={{ textAlign: 'right' }}>数量</span>
-              <span style={{ textAlign: 'right' }}>累计</span>
+              <span>Price</span>
+              <span style={{ textAlign: 'right' }}>Size</span>
+              <span style={{ textAlign: 'right' }}>Total</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontSize: '12px', margin: '2px 0', width: '100%' }}>
@@ -1381,7 +1382,7 @@ export default function App() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 6px', backgroundColor: '#080808', borderTop: '1px solid #141414', borderBottom: '1px solid #141414', margin: '2px 0', width: '100%', boxSizing: 'border-box' }}>
-                <span style={{ color: '#888', fontSize: '11px' }}>标记价格</span>
+                <span style={{ color: '#888', fontSize: '11px' }}>Mark Price</span>
                 <span style={{ color: selectedAsset && selectedAsset.up ? '#00875a' : '#ff0055', fontWeight: '900', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
                   {selectedAsset ? selectedAsset.price : 0} {selectedAsset && selectedAsset.up ? '↑' : '↓'}
                 </span>
@@ -1421,7 +1422,7 @@ export default function App() {
                   boxShadow: '0 0 8px rgba(255, 105, 180, 0.2)'
                 }}
               >
-                {isRealLive ? '充值 USDC' : (hasClaimed ? '充值 USDC' : '领 1000U 空投')}
+                {isRealLive ? 'Deposit USDC' : (hasClaimed ? 'Deposit USDC' : 'Claim 1000U Airdrop')}
               </button>
 
               <button 
@@ -1446,7 +1447,7 @@ export default function App() {
                   boxSizing: 'border-box'
                 }}
               >
-                提现 USDC
+                Withdraw USDC
               </button>
             </div>
 
@@ -1465,41 +1466,41 @@ export default function App() {
               boxSizing: 'border-box',
               borderRadius: '4px'
             }}>
-              {currentSide === 'buy' ? `确认链上做多 ${selectedAsset ? selectedAsset.code : ''}` : `确认链上做空 ${selectedAsset ? selectedAsset.code : ''}`}
+              {currentSide === 'buy' ? `Confirm Long ${selectedAsset ? selectedAsset.code : ''}` : `Confirm Short ${selectedAsset ? selectedAsset.code : ''}`}
             </button>
 
             {/* 账户资产与风控看板 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', backgroundColor: '#050505', border: '1px solid #141414', padding: '8px 10px', fontSize: '12px', fontWeight: 'normal', width: '100%', boxSizing: 'border-box' }}>
               
               <div style={{ color: '#ff69b4', marginBottom: '1px', letterSpacing: '0.5px', fontWeight: 'bold', width: '100%' }}>
-                账户权益
+                Account Equity
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#888', borderBottom: '1px solid #141414', paddingBottom: '4px', width: '100%' }}>
-                <span>合约账户总权益</span>
+                <span>Total Account Equity</span>
                 <span style={{ color: '#fff', fontVariantNumeric: 'tabular-nums', fontWeight: 'bold' }}>
                   ${totalAccountEquity.toFixed(2)}
                 </span>
               </div>
 
               <div style={{ color: '#ff69b4', marginTop: '2px', marginBottom: '1px', letterSpacing: '0.5px', fontWeight: 'bold', width: '100%' }}>
-                合约概览
+                Perpetual Overview
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#888', width: '100%' }}>
-                <span>可用余额</span>
+                <span>Available Balance</span>
                 <span style={{ color: '#00875a', fontVariantNumeric: 'tabular-nums', fontWeight: 'bold' }}>${availableMargin.toFixed(2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#888', width: '100%' }}>
-                <span>持仓占用保证金</span>
+                <span>Position Margin Locked</span>
                 <span style={{ color: '#ff69b4', fontVariantNumeric: 'tabular-nums' }}>${lockedMarginTotal.toFixed(2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#888', width: '100%' }}>
-                <span>浮动盈亏 (PnL)</span>
+                <span>Unrealized PnL</span>
                 <span style={{ color: totalUnrealizedPnl >= 0 ? '#00875a' : '#ff0055', fontVariantNumeric: 'tabular-nums', fontWeight: 'bold' }}>
                   {totalUnrealizedPnl >= 0 ? '+' : ''}{totalUnrealizedPnl.toFixed(2)} USDC
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#888', width: '100%' }}>
-                <span>初始本金</span>
+                <span>Initial Capital</span>
                 <span style={{ color: '#ff69b4', fontVariantNumeric: 'tabular-nums' }}>${depositBalance.toFixed(2)}</span>
               </div>
             </div>
@@ -1513,23 +1514,23 @@ export default function App() {
       {modalOpen && (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
           <div style={{ width: '340px', backgroundColor: '#050505', border: '1px solid #141414', padding: '24px', textAlign: 'center', borderRadius: '8px' }}>
-            <div style={{ fontSize: '13px', marginBottom: '14px', color: '#666', fontWeight: 'bold', letterSpacing: '1px' }}>BRIDGE-LAB 链上广播网关</div>
+            <div style={{ fontSize: '13px', marginBottom: '14px', color: '#666', fontWeight: 'bold', letterSpacing: '1px' }}>BRIDGE-LAB ON-CHAIN GATEWAY</div>
             
             {modalStatus === 'loading' ? (
               <>
                 <div style={{ width: '30px', height: '30px', border: '1px solid #111', borderTop: '1px solid #ff69b4', borderRadius: '50%', margin: '15px auto', animation: 'spin 0.8s linear infinite' }}></div>
-                <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ff69b4', marginBottom: '10px' }}>请在 MetaMask 中确认交易...</div>
+                <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ff69b4', marginBottom: '10px' }}>Confirm transaction in MetaMask...</div>
               </>
             ) : (
               <>
-                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ff69b4', marginBottom: '10px' }}>✓ 链上合约撮合成功</div>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ff69b4', marginBottom: '10px' }}>✓ On-Chain Order Matched</div>
                 <div style={{ color: '#b0b0b0', fontSize: '13px', lineHeight: '1.6', marginBottom: '16px', textAlign: 'left' }}>
-                  市场: {selectedAsset ? selectedAsset.code : ''} ({leverage}x)<br />
-                  扣除保证金: {marginPaid.toFixed(2)} USDC
+                  Market: {selectedAsset ? selectedAsset.code : ''} ({leverage}x)<br />
+                  Margin Deducted: {marginPaid.toFixed(2)} USDC
                 </div>
               </>
             )}
-            <button onClick={() => setModalOpen(false)} style={{ backgroundColor: '#111', border: '1px solid #222', color: '#aaa', padding: '8px 18px', fontSize: '12px', cursor: 'pointer', borderRadius: '4px' }}>关闭</button>
+            <button onClick={() => setModalOpen(false)} style={{ backgroundColor: '#111', border: '1px solid #222', color: '#aaa', padding: '8px 18px', fontSize: '12px', cursor: 'pointer', borderRadius: '4px' }}>Close</button>
           </div>
         </div>
       )}
@@ -1540,14 +1541,14 @@ export default function App() {
           <div style={{ width: '380px', backgroundColor: '#050505', border: '1px solid #ff69b4', padding: '24px', borderRadius: '12px', color: '#fff', textAlign: 'center' }}>
             
             <div style={{ marginBottom: '15px' }}>
-              <h2 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#ff69b4' }}>欢迎来到 BridgeLab</h2>
-              <p style={{ margin: 0, fontSize: '13px', color: '#888' }}>输入您的邮箱即可连接链上合约网关</p>
+              <h2 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#ff69b4' }}>Welcome to BridgeLab</h2>
+              <p style={{ margin: 0, fontSize: '13px', color: '#888' }}>Enter your email to connect on-chain gateway</p>
             </div>
 
             <form onSubmit={handleEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', margin: '20px 0' }}>
               <input 
                 type="text" 
-                placeholder="请输入您的邮箱地址..." 
+                placeholder="Enter your email address..." 
                 value={tempEmailInput}
                 onChange={(e) => setTempEmailInput(e.target.value)}
                 style={{
@@ -1576,7 +1577,7 @@ export default function App() {
                   width: '100%'
                 }}
               >
-                连接后端并登录
+                Connect & Sign In
               </button>
             </form>
 
@@ -1590,7 +1591,7 @@ export default function App() {
                 cursor: 'pointer'
               }}
             >
-              取消
+              Cancel
             </button>
 
           </div>
@@ -1604,9 +1605,9 @@ export default function App() {
             
             <div style={{ marginBottom: '20px' }}>
               <h2 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#ff69b4' }}>
-                {isRealLive ? '充值测试 USDC (MetaMask)' : (hasClaimed ? '充值测试 USDC (MetaMask)' : '领取新手空投 USDC')}
+                {isRealLive ? 'Deposit Test USDC (MetaMask)' : (hasClaimed ? 'Deposit Test USDC (MetaMask)' : 'Claim Newbie Airdrop USDC')}
               </h2>
-              <p style={{ margin: 0, fontSize: '13px', color: '#888' }}>当前账户: <span style={{ color: '#fff' }}>{registeredEmail}</span></p>
+              <p style={{ margin: 0, fontSize: '13px', color: '#888' }}>Account: <span style={{ color: '#fff' }}>{registeredEmail}</span></p>
             </div>
 
             {!hasClaimed && !isRealLive ? (
@@ -1614,7 +1615,7 @@ export default function App() {
                 <div style={{ margin: '20px 0', padding: '16px', background: 'rgba(255,105,180,0.05)', borderRadius: '8px', border: '1px solid rgba(255,105,180,0.2)' }}>
                   <div style={{ fontSize: '24px', fontWeight: '900', color: '#00875a', marginBottom: '5px' }}>+1000 USDC</div>
                   <div style={{ fontSize: '12px', color: '#aaa' }}>
-                    测试链专项测试资金，点击确认后将注入您的虚拟体验账户。
+                    Testnet special funds. Click confirm to credit your demo account.
                   </div>
                 </div>
 
@@ -1623,7 +1624,7 @@ export default function App() {
                     onClick={() => setDepositModalOpen(false)} 
                     style={{ flex: 1, padding: '10px', background: '#111', color: '#888', border: '1px solid #222', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
                   >
-                    关闭
+                    Close
                   </button>
                   <button 
                     onClick={handleExecuteDeposit}
@@ -1640,7 +1641,7 @@ export default function App() {
                       fontSize: '13px'
                     }}
                   >
-                    {isClaiming ? '同步中...' : '确认领取 1000 U'}
+                    {isClaiming ? 'Syncing...' : 'Confirm 1000U'}
                   </button>
                 </div>
               </>
@@ -1648,21 +1649,21 @@ export default function App() {
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '10px 0', padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid #141414', textAlign: 'left' }}>
                   <div>
-                    <span style={{ color: '#888', fontSize: '12px' }}>钱包余额: </span>
+                    <span style={{ color: '#888', fontSize: '12px' }}>Wallet Balance: </span>
                     <span style={{ fontWeight: 'bold', color: (seiBalance || 0) > 0 ? '#fff' : '#ff4d4f', fontSize: '13px' }}>
-                      {seiBalance === null ? '读取中...' : `${(Number(seiBalance) || 0).toFixed(2)} USDC`}
+                      {seiBalance === null ? 'Loading...' : `${(Number(seiBalance) || 0).toFixed(2)} USDC`}
                     </span>
                   </div>
                   <button onClick={checkBalance} disabled={isCheckingBalance} style={{ background: 'transparent', border: '1px solid #00f2fe', color: '#00f2fe', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                    {isCheckingBalance ? '刷新中...' : '🔄 刷新'}
+                    {isCheckingBalance ? 'Refreshing...' : '🔄 Refresh'}
                   </button>
                 </div>
 
                 <div style={{ margin: '15px 0', textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: '#888', display: 'block', marginBottom: '6px' }}>输入充值金额 (唤醒小狐狸)</label>
+                  <label style={{ fontSize: '12px', color: '#888', display: 'block', marginBottom: '6px' }}>Deposit Amount (Trigger MetaMask)</label>
                   <input 
                     type="number" 
-                    placeholder="请输入充值数量..." 
+                    placeholder="Enter deposit amount..." 
                     value={depositInput}
                     onChange={(e) => setDepositInput(e.target.value)}
                     style={{
@@ -1684,7 +1685,7 @@ export default function App() {
                     onClick={() => setDepositModalOpen(false)} 
                     style={{ flex: 1, padding: '10px', background: '#111', color: '#888', border: '1px solid #222', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
                   >
-                    取消
+                    Cancel
                   </button>
                   <button 
                     onClick={handleExecuteDeposit}
@@ -1701,7 +1702,7 @@ export default function App() {
                       fontSize: '13px'
                     }}
                   >
-                    {isClaiming ? '充值同步中...' : '确认充值'}
+                    {isClaiming ? 'Depositing...' : 'Confirm Deposit'}
                   </button>
                 </div>
               </>
@@ -1715,14 +1716,14 @@ export default function App() {
       {withdrawModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
           <div style={{ width: '380px', backgroundColor: '#050505', border: '1px solid #333', padding: '24px', borderRadius: '12px', color: '#fff', textAlign: 'center' }}>
-            <h2 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#ff69b4' }}>提取资金 (Withdraw)</h2>
-            <p style={{ margin: '0 0 15px 0', fontSize: '13px', color: '#888' }}>当前可提现余额: <span style={{ color: '#00875a', fontWeight: 'bold' }}>${withdrawableBalance.toFixed(2)} USDC</span></p>
+            <h2 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#ff69b4' }}>Withdraw Funds</h2>
+            <p style={{ margin: '0 0 15px 0', fontSize: '13px', color: '#888' }}>Withdrawable Balance: <span style={{ color: '#00875a', fontWeight: 'bold' }}>${withdrawableBalance.toFixed(2)} USDC</span></p>
 
             <div style={{ margin: '15px 0', textAlign: 'left' }}>
-              <label style={{ fontSize: '12px', color: '#888', display: 'block', marginBottom: '6px' }}>输入提现数量 (USDC)</label>
+              <label style={{ fontSize: '12px', color: '#888', display: 'block', marginBottom: '6px' }}>Withdrawal Amount (USDC)</label>
               <input 
                 type="number" 
-                placeholder="请输入提现金额..." 
+                placeholder="Enter withdrawal amount..." 
                 value={withdrawAmountInput}
                 onChange={(e) => setWithdrawAmountInput(e.target.value)}
                 style={{
@@ -1740,7 +1741,7 @@ export default function App() {
             </div>
             
             <div style={{ fontSize: '11px', color: '#666', textAlign: 'left', marginBottom: '20px', lineHeight: '1.4' }}>
-              * 点击确认后将强制唤醒 MetaMask 小狐狸钱包弹出链上交易确认框。
+              * Clicking confirm will trigger MetaMask popup for on-chain signature.
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -1748,7 +1749,7 @@ export default function App() {
                 onClick={() => setWithdrawModalOpen(false)} 
                 style={{ flex: 1, padding: '10px', background: '#111', color: '#888', border: '1px solid #222', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
               >
-                取消
+                Cancel
               </button>
               <button 
                 onClick={handleWithdrawSubmit}
@@ -1765,7 +1766,7 @@ export default function App() {
                   fontSize: '13px'
                 }}
               >
-                {isWithdrawing ? 'MetaMask 签名中...' : '确认提现 (链上签名)'}
+                 {isWithdrawing ? 'MetaMask Signing...' : 'Confirm Withdrawal'}
               </button>
             </div>
           </div>
@@ -1800,6 +1801,8 @@ export default function App() {
           background: #ff85c0;
         }
       `}</style>
+      
+     
     </div>
   );
 }
