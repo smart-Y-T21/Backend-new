@@ -1,0 +1,8 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+private_key = "0x3A3a5F3Fc14ed3D5c3475EC12fe53F1b797FE0c9"
+
+[rpc_endpoints]
+seiTestnet = "https://evm-rpc-testnet.sei-apis.com"
