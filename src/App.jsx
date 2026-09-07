@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
-// 👇 引入看板组件
 
 // ==========================================
-// 🔌 生产级前端与合约通信契约层 (BridgeLab Engine)
+//  🔌 生产级前端与合约通信契约层 (BridgeLab Engine)
 // ==========================================
 const CONTRACT_ADDRESS = "0x8e13ef50186f3d5495d1e826d345d5f4e14735f4";
 const CONTRACT_ABI = [
@@ -22,54 +21,50 @@ const CONTRACT_ABI = [
   {"type":"event","name":"OrderPlaced","inputs":[{"name":"user","type":"address","indexed":true,"internalType":"address"},{"name":"asset","type":"string","indexed":false,"internalType":"string"},{"name":"isLong","type":"bool","indexed":false,"internalType":"bool"},{"name":"size","type":"uint256","indexed":false,"internalType":"uint256"},{"name":"price","type":"uint256","indexed":false,"internalType":"uint256"},{"name":"leverage","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},
   {"type":"event","name":"PositionClosed","inputs":[{"name":"user","type":"address","indexed":true,"internalType":"address"},{"name":"index","type":"uint256","indexed":false,"internalType":"uint256"},{"name":"pnl","type":"int256","indexed":false,"internalType":"int256"}],"anonymous":false}
 ];
-
+ 
 const apiClient = {
   login: async (email) => {
     await new Promise(resolve => setTimeout(resolve, 300));
     localStorage.setItem('bridgelab_active_email', email);
     const storageKey = `bridgelab_acc_${email}`;
-    let accData = JSON.parse(localStorage.getItem(storageKey) || '{"balance": 0, "airdropBalance": 0, "depositBalance": 0, "claimed": false, "isRealLive": false, "positions": [], "walletAddress": null}');
+    let accData = JSON.parse(localStorage.getItem(storageKey) || JSON.stringify({
+      balance: 0, 
+      airdropBalance: 0, 
+      depositBalance: 0, 
+      claimed: false, 
+      isRealLive: false, 
+      positions: [], 
+      walletAddress: null,
+      multiBalances: { USDC: 0, EURC: 0, HKD: 0, CNH: 0 },
+      activeMarginAsset: 'USDC'
+    }));
     return { success: true, email, data: accData };
   },
-
+ 
   deposit: async (email, amount, txHash = null) => {
     await new Promise(resolve => setTimeout(resolve, 400));
     const storageKey = `bridgelab_acc_${email}`;
-    let accData = JSON.parse(localStorage.getItem(storageKey) || '{"balance": 0, "airdropBalance": 0, "depositBalance": 0, "claimed": false, "isRealLive": false, "positions": [], "walletAddress": null}');
+    let accData = JSON.parse(localStorage.getItem(storageKey));
     
     accData.depositBalance += amount;
     accData.balance = accData.depositBalance; 
     accData.airdropBalance = 0; 
     accData.claimed = true;
     accData.isRealLive = true; 
+    accData.multiBalances.USDC = (accData.multiBalances.USDC || 0) + amount;
     
     localStorage.setItem(storageKey, JSON.stringify(accData));
     return { success: true, newBalance: accData.balance, txHash };
-  },
-
-  claimAirdrop: async (email) => {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    const storageKey = `bridgelab_acc_${email}`;
-    let accData = JSON.parse(localStorage.getItem(storageKey) || '{"balance": 0, "airdropBalance": 0, "depositBalance": 0, "claimed": false, "isRealLive": false, "positions": [], "walletAddress": null}');
-    
-    if (!accData.isRealLive) {
-      accData.airdropBalance = 1000;
-      accData.balance = 1000;
-      accData.claimed = true;
-    }
-    
-    localStorage.setItem(storageKey, JSON.stringify(accData));
-    return { success: true, newBalance: accData.balance };
   }
 };
-
+ 
 // ==========================================
-// 🌟 纯原生辅助组件：价格轻量脉冲变色
+//  🌟 纯原生辅助组件：价格轻量脉冲变色
 // ==========================================
 const PriceDisplay = ({ price, currencySymbol = '$' }) => {
   const prevPriceRef = useRef(price);
   const [colorClass, setColorClass] = useState('');
-
+ 
   useEffect(() => {
     if (price !== prevPriceRef.current) {
       setColorClass(price > prevPriceRef.current ? 'text-up' : 'text-down');
@@ -78,16 +73,16 @@ const PriceDisplay = ({ price, currencySymbol = '$' }) => {
       return () => clearTimeout(timer);
     }
   }, [price]);
-
+ 
   return (
     <span className={colorClass} style={{ transition: 'color 0.4s ease', fontWeight: 'bold' }}>
       {currencySymbol}{price.toLocaleString()}
     </span>
   );
 };
-
+ 
 export default function App() {
-
+ 
   const [currentSide, setCurrentSide] = useState('buy');
   const [leverage, setLeverage] = useState(20);
   const [percentOption, setPercentOption] = useState(25);
@@ -105,64 +100,57 @@ export default function App() {
   
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [tempEmailInput, setTempEmailInput] = useState('');
-
-  // 充值与水龙头状态
-  const [depositModalOpen, setDepositModalOpen] = useState(false);
+ 
+  // 弹窗状态
+  const [depositModalOpen, setDepositModalOpen] = useState(false);        
+  const [realDepositModalOpen, setRealDepositModalOpen] = useState(false); 
   const [isClaiming, setIsClaiming] = useState(false);
   const [depositInput, setDepositInput] = useState('');
   const [seiBalance, setSeiBalance] = useState(null);
   const [isCheckingBalance, setIsCheckingBalance] = useState(false);
-
-  // 🌟 提现安全弹窗状态
-  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
-  const [withdrawAmountInput, setWithdrawAmountInput] = useState('');
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
-
-  // 💰 严格隔离的资金账本
+  
+  // 多稳定币领水与资产状态
+  const [selectedFaucetAsset, setSelectedFaucetAsset] = useState('USDC');
+  
+  // 💰 多币种独立子账本状态
+  const [multiBalances, setMultiBalances] = useState({
+    USDC: 0.00,
+    EURC: 0.00,
+    HKD: 0.00,
+    CNH: 0.00
+  });
+  const [activeMarginAsset, setActiveMarginAsset] = useState('USDC');
+  const fxRatesToUsdc = {
+    USDC: 1.0,
+    EURC: 1.09,
+    HKD: 0.128,
+    CNH: 0.147
+  };
+  
+  const assetSymbolMap = {
+    USDC: { symbol: '$', suffix: 'USDC' },
+    EURC: { symbol: '€', suffix: 'EURC' },
+    HKD:  { symbol: 'HK$', suffix: 'HKD' },
+    CNH:  { symbol: 'CN¥', suffix: 'CNH' }
+  };
+ 
+  const currentAssetDisplay = assetSymbolMap[activeMarginAsset] || { symbol: '$', suffix: 'USDC' };
+ 
   const [airdropBalance, setAirdropBalance] = useState(0.00); 
   const [depositBalance, setDepositBalance] = useState(0.00); 
   const [availableMarginRaw, setAvailableMarginRaw] = useState(0.00); 
+ 
+  const multiLedgerActiveBalance = multiBalances[activeMarginAsset] || 0;
+  const dynamicAvailableMargin = Math.max(0, multiLedgerActiveBalance);
+ 
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [withdrawAmountInput, setWithdrawAmountInput] = useState('');
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   
-  // 🛡️ 绝对防负数兜底：可用余额永不小于 0
-  const availableMargin = Math.max(0, availableMarginRaw);
-
+  const availableMargin = Math.max(0, dynamicAvailableMargin);
   const [positions, setPositions] = useState([]); 
-
-  // 初始化加载缓存
-  useEffect(() => {
-    const activeEmail = localStorage.getItem('bridgelab_active_email');
-    if (activeEmail) {
-      setRegisteredEmail(activeEmail);
-      setIsLoggedIn(true);
-      
-      const accData = JSON.parse(localStorage.getItem(`bridgelab_acc_${activeEmail}`) || '{"balance": 0, "airdropBalance": 0, "depositBalance": 0, "claimed": false, "isRealLive": false, "positions": [], "walletAddress": null}');
-      setAirdropBalance(accData.airdropBalance || 0);
-      setDepositBalance(accData.depositBalance || 0);
-      setAvailableMarginRaw(accData.balance);
-      setHasClaimed(accData.claimed);
-      setIsRealLive(accData.isRealLive || false);
-      setPositions(accData.positions || []);
-      setWalletAddress(accData.walletAddress || null);
-    }
-  }, []);
-
-  // 自动同步状态到缓存
-  useEffect(() => {
-    if (isLoggedIn && registeredEmail) {
-      const accData = {
-        balance: availableMarginRaw,
-        airdropBalance,
-        depositBalance,
-        claimed: hasClaimed,
-        isRealLive,
-        positions,
-        walletAddress
-      };
-      localStorage.setItem(`bridgelab_acc_${registeredEmail}`, JSON.stringify(accData));
-    }
-  }, [availableMarginRaw, airdropBalance, depositBalance, hasClaimed, isRealLive, positions, isLoggedIn, registeredEmail, walletAddress]);
-
-  // 🌟 资产大盘数据矩阵
+ 
+  // 🌟 资产大盘数据矩阵（包含宏观汇率，供实时计算使用）
   const [assets, setAssets] = useState([
     { code: 'BTC', price: 98245.5, change: 2.4, up: true, cat: 'Crypto', isBtcEco: true, subCat: '24*7 Perpetual', currency: '$' },
     { code: 'MSTR', price: 412.50, change: 8.2, up: true, cat: 'Crypto', isBtcEco: true, subCat: 'Bitcoin Treasury · US', currency: '$' },
@@ -173,7 +161,7 @@ export default function App() {
     { code: 'CLSK', price: 14.80, change: -1.5, up: false, cat: 'Crypto', isBtcEco: true, subCat: 'Bitcoin Treasury · US', currency: '$' },
     { code: 'HUT', price: 18.50, change: 5.1, up: true, cat: 'Crypto', isBtcEco: true, subCat: 'Bitcoin Treasury · US', currency: '$' },
     { code: 'METAPLANET', price: 220.00, change: 8.3, up: true, cat: 'Crypto', isBtcEco: true, subCat: 'Bitcoin Treasury · JP', currency: '¥' },
-
+ 
     { code: 'ETH', price: 3452.1, change: -1.1, up: false, cat: 'Ethereum', isEthEco: true, subCat: '24*7 Perpetual', currency: '$' },
     { code: 'ETHE', price: 28.50, change: 1.8, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'Grayscale Ethereum Trust', currency: '$' },
     { code: 'ETHA', price: 24.10, change: 2.1, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'iShares Ethereum Trust', currency: '$' },
@@ -181,7 +169,7 @@ export default function App() {
     { code: 'SBET', price: 6.29, change: 0.0, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'ETH Treasury · US', currency: '$' },
     { code: 'BMNR', price: 15.50, change: 0.0, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'ETH Treasury · US', currency: '$' },
     { code: 'BTBT', price: 4.50, change: 0.0, up: true, cat: 'Ethereum', isEthEco: true, subCat: 'ETH Treasury · US', currency: '$' },
-
+ 
     { name: 'HYPE', price: 28.50, change: 12.4, up: true, cat: 'Altcoins', currency: '$' },
     { name: 'SOL', price: 192.40, change: 3.1, up: true, cat: 'Altcoins', currency: '$' },
     { name: 'SEI', price: 0.6482, change: 5.8, up: true, cat: 'Altcoins', currency: '$' },
@@ -199,7 +187,7 @@ export default function App() {
     { name: 'RENDER', price: 8.42, change: 4.5, up: true, cat: 'Altcoins', currency: '$' },
     { name: 'INJ', price: 24.10, change: 2.2, up: true, cat: 'Altcoins', currency: '$' },
     { name: 'TIA', price: 6.25, change: -1.8, up: false, cat: 'Altcoins', currency: '$' },
-
+ 
     { name: 'NVDA', price: 195.04, change: 1.5, up: true, cat: 'US Equities', currency: '$' },
     { name: 'TSLA', price: 308.85, change: -1.2, up: false, cat: 'US Equities', currency: '$' },
     { name: 'AAPL', price: 333.43, change: 0.8, up: true, cat: 'US Equities', currency: '$' },
@@ -211,7 +199,19 @@ export default function App() {
     { name: 'NFLX', price: 712.00, change: 1.1, up: true, cat: 'US Equities', currency: '$' },
     { name: 'AMD', price: 162.10, change: -2.0, up: false, cat: 'US Equities', currency: '$' },
     { name: 'INTC', price: 22.40, change: -0.8, up: false, cat: 'US Equities', currency: '$' },
-
+ 
+    { code: 'ASML', name: 'ASML', displayName: 'ASML Holding', backendCode: 'ASML', price: 920.50, change: 3.2, up: true, cat: 'EU Equities', currency: '€' },
+    { code: 'LVMH', name: 'LVMH', displayName: 'LVMH', backendCode: 'LVMH', price: 430.00, change: -0.8, up: false, cat: 'EU Equities', currency: '€' },
+    { code: 'RMS', name: 'RMS', displayName: 'Hermès', backendCode: 'RMS', price: 2150.00, change: 1.4, up: true, cat: 'EU Equities', currency: '€' },
+    { code: 'AZN', name: 'AZN', displayName: 'AstraZeneca', backendCode: 'AZN', price: 124.50, change: 0.9, up: true, cat: 'EU Equities', currency: '£' },
+    { code: 'NESN', name: 'NESN', displayName: 'Nestlé', backendCode: 'NESN', price: 88.60, change: -0.2, up: false, cat: 'EU Equities', currency: 'CHF' },
+    { code: 'SIE', name: 'SIE', displayName: 'Siemens', backendCode: 'SIE', price: 178.40, change: 1.1, up: true, cat: 'EU Equities', currency: '€' },
+    { code: 'SAP', name: 'SAP', displayName: 'SAP SE', backendCode: 'SAP', price: 215.40, change: 1.5, up: true, cat: 'EU Equities', currency: '€' },
+    { code: 'TTE', name: 'TTE', displayName: 'TotalEnergies', backendCode: 'TTE', price: 62.10, change: -1.0, up: false, cat: 'EU Equities', currency: '€' },
+    { code: 'RACE', name: 'RACE', displayName: 'Ferrari', backendCode: 'RACE', price: 410.00, change: 1.8, up: true, cat: 'EU Equities', currency: '€' },
+    { code: 'ALV', name: 'ALV', displayName: 'Allianz', backendCode: 'ALV', price: 275.50, change: 0.7, up: true, cat: 'EU Equities', currency: '€' },
+    { code: 'RHM', name: 'RHM', displayName: 'Rheinmetall', backendCode: 'RHM', price: 580.00, change: 4.5, up: true, cat: 'EU Equities', currency: '€' },
+ 
     { name: 'BABA', price: 92.50, change: -1.2, up: false, cat: 'Chinese ADRs', currency: '$' },
     { name: 'PDD', price: 128.40, change: 3.5, up: true, cat: 'Chinese ADRs', currency: '$' },
     { name: 'TCEHY', price: 58.20, change: 1.5, up: true, cat: 'Chinese ADRs', currency: '$' },
@@ -222,7 +222,7 @@ export default function App() {
     { name: 'LI', price: 26.50, change: 2.1, up: true, cat: 'Chinese ADRs', currency: '$' },
     { name: 'BILI', price: 21.40, change: 4.2, up: true, cat: 'Chinese ADRs', currency: '$' },
     { name: 'TME', price: 12.80, change: 0.5, up: true, cat: 'Chinese ADRs', currency: '$' },
-
+ 
     { name: 'HSI', displayName: 'HSI', backendCode: 'HSI', price: 19850.00, change: 1.2, up: true, cat: 'HK Equities', subCat: 'Hang Seng Index · Benchmark', currency: 'HKD ' },
     { name: 'CKH', displayName: 'CK Hutchison', backendCode: '00001', price: 38.50, change: 0.8, up: true, cat: 'HK Equities', subCat: 'CK Hutchison Holdings', currency: 'HKD ' },
     { name: 'HSBC_HK', displayName: 'HSBC', backendCode: '00005', price: 68.20, change: 1.1, up: true, cat: 'HK Equities', subCat: 'HSBC Holdings plc', currency: 'HKD ' },
@@ -235,7 +235,7 @@ export default function App() {
     { name: 'LIAUTO', displayName: 'Li Auto', backendCode: '02015', price: 94.50, change: 2.4, up: true, cat: 'HK Equities', subCat: 'Li Auto Inc-W', currency: 'HKD ' },
     { name: 'BAIDU_HK', displayName: 'Baidu', backendCode: '09888', price: 88.50, change: -0.5, up: false, cat: 'HK Equities', subCat: 'Baidu Inc-SW', currency: 'HKD ' },
     { name: 'HKEX', displayName: 'HKEX', backendCode: '00388', price: 298.00, change: 1.5, up: true, cat: 'HK Equities', subCat: 'Hong Kong Exchanges and Clearing', currency: 'HKD ' },
-
+ 
     { name: 'USD/CNH', price: 7.2450, change: 0.1, up: true, cat: 'Macro', currency: '$' },
     { name: 'DXY', price: 104.20, change: -0.2, up: false, cat: 'Macro', currency: '$' },
     { name: 'EUR/USD', price: 1.0890, change: 0.1, up: true, cat: 'Macro', currency: '$' },
@@ -250,7 +250,7 @@ export default function App() {
     { name: 'SILVER', price: 28.50, change: 0.9, up: true, cat: 'Macro', currency: '$' },
     { name: 'PLATINUM', price: 1010.0, change: 0.5, up: true, cat: 'Macro', currency: '$' },
     { name: 'PALLADIUM', price: 985.0, change: -0.4, up: false, cat: 'Macro', currency: '$' },
-
+ 
     { name: 'SPY', price: 595.20, change: 0.6, up: true, cat: 'ETF', currency: '$' },
     { name: 'QQQ', price: 518.40, change: 0.9, up: true, cat: 'ETF', currency: '$' },
     { name: 'IWM', price: 232.10, change: -0.2, up: false, cat: 'ETF', currency: '$' },
@@ -268,9 +268,38 @@ export default function App() {
     ...item,
     code: item.code || item.name,
   })));
-
+ 
   const [selectedAsset, setSelectedAsset] = useState(assets[0]);
-
+ 
+  // 动态计算 1000 USDC 等值的领水额度
+  const getRealtimeFaucetAmount = (assetId) => {
+    const baseUsdc = 1000;
+    if (assetId === 'USDC') return 1000;
+ 
+    let rateObj = null;
+    if (assetId === 'EURC') {
+      rateObj = assets.find(a => a.code === 'EUR/USD');
+      return (rateObj && rateObj.price > 0) ? Math.round(baseUsdc / rateObj.price) : 918;
+    } else if (assetId === 'CNH') {
+      rateObj = assets.find(a => a.code === 'USD/CNH');
+      return (rateObj && rateObj.price > 0) ? Math.round(baseUsdc * rateObj.price) : 7245;
+    } else if (assetId === 'HKD') {
+      rateObj = assets.find(a => a.code === 'USD/HKD');
+      const hkdRate = (rateObj && rateObj.price > 0) ? rateObj.price : 7.8;
+      return Math.round(baseUsdc * hkdRate);
+    }
+    return 1000;
+  };
+ 
+  const faucetOptions = [
+    { id: 'USDC', name: 'USDC', amount: 1000, tag: 'Native Anchor', tagColor: '#38bdf8' },
+    { id: 'EURC', name: 'EURC', amount: getRealtimeFaucetAmount('EURC'), tag: 'Native Anchor', tagColor: '#38bdf8' },
+    { id: 'HKD', name: 'HKD Stablecoin', amount: getRealtimeFaucetAmount('HKD'), tag: 'Sandbox Simulated', tagColor: '#ff69b4' },
+    { id: 'CNH', name: 'CNH Stablecoin', amount: getRealtimeFaucetAmount('CNH'), tag: 'Sandbox Simulated', tagColor: '#ff69b4' }
+  ];
+ 
+  const currentSelection = faucetOptions.find(opt => opt.id === selectedFaucetAsset) || faucetOptions[0];
+ 
   const isCryptoOrMeme = selectedAsset && (
     selectedAsset.cat === 'Altcoins' || 
     selectedAsset.code === 'BTC' || 
@@ -278,31 +307,31 @@ export default function App() {
     selectedAsset.cat === 'Crypto' || 
     selectedAsset.cat === 'Ethereum'
   ) && !selectedAsset.isEvent;
-
+ 
   const maxAllowedLeverage = isCryptoOrMeme ? 30 : 10;
-
+ 
   useEffect(() => {
     if (leverage > maxAllowedLeverage) {
       setLeverage(maxAllowedLeverage);
     }
   }, [selectedAsset]);
-
-  // 🌟 对接 Python 做市机器人后端网关
+ 
+  // 对接 Python 做市机器人后端网关
   useEffect(() => {
     const fetchLivePricesFromPython = async () => {
       try {
-        const apiBaseUrl = 'https://bridgelab-backend.onrender.com';
+        const apiBaseUrl = 'http://127.0.0.1:5001';
         const res = await fetch(`${apiBaseUrl}/api/prices`);
         const data = await res.json();
         
         if (data.success && data.prices) {
           const remotePrices = data.prices;
-
+ 
           setAssets(prevAssets => 
             prevAssets.map(asset => {
              const fetchKey = asset.backendCode || asset.code || asset.name;
              const realPrice = remotePrices[fetchKey] !== undefined ? remotePrices[fetchKey] : remotePrices[asset.name];
-              
+             
               if (realPrice !== undefined && !isNaN(realPrice)) {
                 const oldPrice = asset.price;
                 const changeDiff = ((realPrice - oldPrice) / oldPrice) * 100;
@@ -321,12 +350,12 @@ export default function App() {
         console.error("⚠️ Failed to connect Python market maker gateway:", e);
       }
     };
-
+ 
     fetchLivePricesFromPython();
     const intervalTimer = setInterval(fetchLivePricesFromPython, 500);
     return () => clearInterval(intervalTimer);
   }, []);
-
+ 
   // 智能风控强平引擎
   useEffect(() => {
     if (positions.length === 0) return;
@@ -344,14 +373,14 @@ export default function App() {
       return remainingPositions;
     });
   }, [assets]);
-
+ 
   useEffect(() => {
     if (selectedAsset) {
       const fresh = assets.find(a => a.code === selectedAsset.code);
       if (fresh) setSelectedAsset(fresh);
     }
   }, [assets]);
-
+ 
   const currentAssetPrice = selectedAsset ? selectedAsset.price : 1;
   
   const getMarginPaid = () => {
@@ -360,7 +389,7 @@ export default function App() {
     }
     return availableMargin * (percentOption / 100);
   };
-
+ 
   const marginPaid = getMarginPaid();
   const notionalSize = (marginPaid * leverage) / currentAssetPrice;
   const lockedMarginTotal = positions.reduce((acc, pos) => acc + pos.margin, 0);
@@ -371,10 +400,10 @@ export default function App() {
     const pnl = pos.side === 'buy' ? (curPrice - pos.entryPrice) * pos.size : (pos.entryPrice - curPrice) * pos.size;
     return acc + pnl;
   }, 0);
-
+ 
   const totalAccountEquity = Math.max(0, availableMargin + lockedMarginTotal + totalUnrealizedPnl);
   const withdrawableBalance = Math.max(0, depositBalance + (depositBalance > 0 ? totalUnrealizedPnl : 0));
-
+ 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
     if (!tempEmailInput) {
@@ -390,19 +419,18 @@ export default function App() {
       setAirdropBalance(res.data.airdropBalance || 0);
       setDepositBalance(res.data.depositBalance || 0);
       setAvailableMarginRaw(res.data.balance);
-      setHasClaimed(res.data.claimed);
+      setHasClaimed(res.data.claimed || false);
       setIsRealLive(res.data.isRealLive || false);
       setPositions(res.data.positions || []);
       setWalletAddress(res.data.walletAddress || null);
+      if (res.data.multiBalances) {
+        setMultiBalances(res.data.multiBalances);
+      }
     }
     setTempEmailInput('');
     setEmailModalOpen(false);
-    
-    if (!res.data.claimed && !res.data.isRealLive) {
-      setDepositModalOpen(true);
-    }
   };
-
+ 
   const handleLogout = () => {
     localStorage.removeItem('bridgelab_active_email');
     setRegisteredEmail('');
@@ -413,141 +441,141 @@ export default function App() {
     setAirdropBalance(0);
     setDepositBalance(0);
     setAvailableMarginRaw(0);
+    setMultiBalances({ USDC: 0, EURC: 0, HKD: 0, CNH: 0 });
     setPositions([]);
     alert("Logged out successfully!");
   };
-
-  const checkBalance = async () => {
-    if (!window.ethereum) return;
-    setIsCheckingBalance(true);
-    try {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (accounts.length === 0) {
-        setIsCheckingBalance(false);
-        return;
-      }
-      const userAddress = accounts[0];
-      const officialTestnetUsdcAddress = '0x4fCF1784B31630811181f670Aea7A7bEF803eaED';
-      const balanceOfData = '0x70a08231' + userAddress.replace('0x', '').padStart(64, '0');
-      
-      const balanceResult = await window.ethereum.request({
-        method: 'eth_call',
-        params: [{ to: officialTestnetUsdcAddress, data: balanceOfData }, 'latest']
-      });
-      
-      const parsedBalance = parseInt(balanceResult, 16) / 1_000_000;
-      setSeiBalance(parsedBalance);
-    } catch (error) {
-      console.error("Failed to fetch chain balance", error);
-      setSeiBalance(0);
-    } finally {
-      setIsCheckingBalance(false);
+ 
+  const handleOpenFaucetModal = () => {
+    if (!isLoggedIn) {
+      setEmailModalOpen(true);
+      return;
     }
+    if (hasClaimed) {
+      alert("You have already claimed the newcomer airdrop.");
+      return;
+    }
+    setDepositModalOpen(true);
   };
-
+ 
   const handleOpenDepositModal = () => {
     if (!isLoggedIn) {
       setEmailModalOpen(true);
       return;
     }
-    setDepositModalOpen(true);
+    setRealDepositModalOpen(true);
   };
-
-  useEffect(() => {
-    if (depositModalOpen && isLoggedIn && hasClaimed) {
-      setSeiBalance(null);
-      checkBalance();
+ 
+  const handleClaimFaucet = async () => {
+    if (hasClaimed) {
+      alert("You have already claimed the newcomer airdrop.");
+      setDepositModalOpen(false);
+      return;
     }
-  }, [depositModalOpen, isLoggedIn, hasClaimed]);
-
+ 
+    const assetId = currentSelection.id;
+    const amt = currentSelection.amount;
+ 
+    setIsClaiming(true);
+    setTimeout(() => {
+      const newMultiBalances = {
+        USDC: 0,
+        EURC: 0,
+        HKD: 0,
+        CNH: 0,
+        [assetId]: amt
+      };
+      setMultiBalances(newMultiBalances);
+      setActiveMarginAsset(assetId);
+      setHasClaimed(true);
+      setIsClaiming(false);
+ 
+      if (registeredEmail) {
+        const storageKey = `bridgelab_acc_${registeredEmail}`;
+        let accData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+        accData.claimed = true;
+        accData.multiBalances = newMultiBalances;
+        localStorage.setItem(storageKey, JSON.stringify(accData));
+      }
+ 
+      alert(`✓ Successfully claimed +${amt} ${assetId} to your sandbox sub-ledger!`);
+      setDepositModalOpen(false);
+    }, 400);
+  };
+ 
   const handleExecuteDeposit = async () => {
-    if (!hasClaimed) {
+    const amt = parseFloat(depositInput);
+    if (isNaN(amt) || amt <= 0) {
+      alert("Please enter a valid deposit amount!");
+      return;
+    }
+ 
+    if (!window.ethereum) {
+      alert("MetaMask not detected!");
+      return;
+    }
+ 
+    try {
       setIsClaiming(true);
-      await apiClient.claimAirdrop(registeredEmail);
-      setTimeout(() => {
-        setAirdropBalance(1000);
-        setAvailableMarginRaw(1000);
-        setHasClaimed(true);
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const userAddress = accounts[0];
+      setWalletAddress(userAddress);
+ 
+      const officialTestnetUsdcAddress = '0x4fCF1784B31630811181f670Aea7A7bEF803eaED';
+      const treasuryAddress = '0x3A3a5F3Fc14ed3D5c3475EC12fe53F1b797FE0c9';
+ 
+      const balanceOfData = '0x70a08231' + userAddress.replace('0x', '').padStart(64, '0');
+      const balanceResult = await window.ethereum.request({
+        method: 'eth_call',
+        params: [{ to: officialTestnetUsdcAddress, data: balanceOfData }, 'latest']
+      });
+ 
+      const userBalance = parseInt(balanceResult, 16) / 1_000_000;
+ 
+      if (userBalance < amt) {
+        alert(`Insufficient balance! You currently have ${userBalance} USDC.`);
         setIsClaiming(false);
-        alert("Successfully claimed 1000 USDC Newbie Airdrop (For leveraged trading only, non-withdrawable)!");
-        setDepositModalOpen(false);
-      }, 600);
-    } else {
-      const amt = parseFloat(depositInput);
-      if (isNaN(amt) || amt <= 0) {
-        alert("Please enter a valid deposit amount!");
-        return;
+        return; 
       }
-
-      if (!isRealLive && airdropBalance > 0) {
-        const confirmReal = window.confirm("⚠️ Notice: You are making your first live deposit. This will switch your account to Live Trading mode, and previous airdrop/demo data will be reset. Continue?");
-        if (!confirmReal) return;
-      }
-
-      if (!window.ethereum) {
-        alert("MetaMask not detected!");
-        return;
-      }
-
-      try {
-        setIsClaiming(true);
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const userAddress = accounts[0];
-        setWalletAddress(userAddress);
-
-        const officialTestnetUsdcAddress = '0x4fCF1784B31630811181f670Aea7A7bEF803eaED';
-        const treasuryAddress = '0x3A3a5F3Fc14ed3D5c3475EC12fe53F1b797FE0c9';
-
-        const balanceOfData = '0x70a08231' + userAddress.replace('0x', '').padStart(64, '0');
-        const balanceResult = await window.ethereum.request({
-          method: 'eth_call',
-          params: [{ to: officialTestnetUsdcAddress, data: balanceOfData }, 'latest']
-        });
-
-        const userBalance = parseInt(balanceResult, 16) / 1_000_000;
-
-        if (userBalance < amt) {
-          alert(`Insufficient balance! You currently have ${userBalance} USDC, please claim test tokens first.`);
-          setIsClaiming(false);
-          return; 
-        }
-
-        const tokenAmount = Math.floor(amt * 1_000_000);
-        const hexAmount = tokenAmount.toString(16).padStart(64, '0');
-        const data = '0xa9059cbb' + 
-                     treasuryAddress.replace('0x', '').padStart(64, '0') + 
-                     hexAmount;
-
-        const txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            to: officialTestnetUsdcAddress,
-            from: userAddress,
-            value: '0x0', 
-            data: data,
-          }],
-        });
-
-        await apiClient.deposit(registeredEmail, amt, txHash);
-
-        setDepositBalance(prev => prev + amt);
-        setAirdropBalance(0);
-        setIsRealLive(true);
-        setPositions([]);
-        setAvailableMarginRaw(amt);
-
-        setIsClaiming(false);
-        alert(`✓ Successfully deposited ${amt} USDC via MetaMask, live trading locked!`);
-        setDepositInput('');
-        setDepositModalOpen(false);
-      } catch (err) {
-        console.error(err);
-        alert("Deposit cancelled or on-chain transaction failed");
-        setIsClaiming(false);
-      }
+ 
+      const tokenAmount = Math.floor(amt * 1_000_000);
+      const hexAmount = tokenAmount.toString(16).padStart(64, '0');
+      const data = '0xa9059cbb' + 
+                   treasuryAddress.replace('0x', '').padStart(64, '0') + 
+                   hexAmount;
+ 
+      const txHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          to: officialTestnetUsdcAddress,
+          from: userAddress,
+          value: '0x0', 
+          data: data,
+        }],
+      });
+ 
+      await apiClient.deposit(registeredEmail, amt, txHash);
+ 
+      setDepositBalance(prev => prev + amt);
+      setAirdropBalance(0);
+      setIsRealLive(true);
+      setPositions([]);
+      setAvailableMarginRaw(amt);
+      
+      setMultiBalances(prev => ({ ...prev, USDC: (prev.USDC || 0) + amt }));
+      setActiveMarginAsset('USDC');
+ 
+      setIsClaiming(false);
+      alert(`✓ Successfully deposited ${amt} USDC via MetaMask, live trading locked!`);
+      setDepositInput('');
+      setRealDepositModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("Deposit cancelled or on-chain transaction failed");
+      setIsClaiming(false);
     }
   };
-
+ 
   const handleWithdrawSubmit = async () => {
     const amt = parseFloat(withdrawAmountInput);
     if (isNaN(amt) || amt <= 0) {
@@ -558,17 +586,17 @@ export default function App() {
       alert(`Withdrawal limit exceeded! You can withdraw a maximum of $${withdrawableBalance.toFixed(2)}.`);
       return;
     }
-
+ 
     if (!window.ethereum) {
       alert("MetaMask not detected!");
       return;
     }
-
+ 
     try {
       setIsWithdrawing(true);
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       const userAddress = accounts[0];
-
+ 
       const officialTestnetUsdcAddress = '0x4fCF1784B31630811181f670Aea7A7bEF803eaED';
       const tokenAmount = Math.floor(amt * 1_000_000);
       const hexAmount = tokenAmount.toString(16).padStart(64, '0');
@@ -576,7 +604,7 @@ export default function App() {
       const data = '0xa9059cbb' + 
                    userAddress.replace('0x', '').padStart(64, '0') + 
                    hexAmount;
-
+ 
       const txHash = await window.ethereum.request({
         method: 'eth_sendTransaction',
         params: [{
@@ -586,13 +614,13 @@ export default function App() {
           data: data,
         }],
       });
-
+ 
       setDepositBalance(prev => Math.max(0, prev - amt));
       setAvailableMarginRaw(prev => Number((prev - amt).toFixed(2)));
       setWithdrawAmountInput('');
       setWithdrawModalOpen(false);
       setIsWithdrawing(false);
-
+ 
       alert(`✓ On-chain withdrawal successful! Returned ${amt} USDC to your MetaMask wallet.\nTxHash: ${txHash.slice(0, 10)}...`);
     } catch (error) {
       console.error("Withdrawal cancelled or transaction failed", error);
@@ -600,62 +628,55 @@ export default function App() {
       setIsWithdrawing(false);
     }
   };
-
-  // 🌟 核心升级：调用本地智能合约真实下单
+ 
+  // 🌟 核心升级：智能同币种免折算 vs 跨币种实时汇率桥接下单（在 DEX 引擎中秒级成交，不弹小狐狸）
   const handleOpenModal = async () => {
     if (!isLoggedIn) {
       setEmailModalOpen(true);
       return;
     }
-
+ 
     const currentMarginPaid = getMarginPaid();
     if (currentMarginPaid <= 0 || currentMarginPaid > availableMargin) {
-      alert("Insufficient available margin! Please deposit USDC first.");
+      alert("Insufficient available margin!");
       return;
     }
-
+ 
+    // 检查资产计价币种与当前活跃子账本是否同币种
+    const assetCurrency = selectedAsset.currency || '$';
+    const currencyToLedgerMap = { '$': 'USDC', '€': 'EURC', 'HKD ': 'HKD', 'CN¥': 'CNH' };
+    const assetLedgerEquivalent = currencyToLedgerMap[assetCurrency] || 'USDC';
+ 
+    let marginPaidInUsdc = currentMarginPaid;
+    let conversionRate = 1.0;
+ 
+    if (assetLedgerEquivalent !== activeMarginAsset) {
+      // 跨币种时通过实时汇率转换
+      const ledgerRateToUsdc = fxRatesToUsdc[activeMarginAsset] || 1.0;
+      const assetRateToUsdc = (assetCurrency === '€') ? fxRatesToUsdc['EURC'] : (assetCurrency === 'HKD ' ? fxRatesToUsdc['HKD'] : 1.0);
+      conversionRate = ledgerRateToUsdc / assetRateToUsdc;
+      marginPaidInUsdc = currentMarginPaid * conversionRate;
+    }
+ 
     setModalStatus('loading');
     setModalOpen(true);
-
-    try {
-      if (!window.ethereum) {
-        alert("MetaMask not detected!");
-        setModalOpen(false);
-        return;
-      }
-
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-      const isLong = currentSide === 'buy';
-      const sizeParsed = ethers.parseUnits(((currentMarginPaid * leverage) / currentAssetPrice).toFixed(4), 18);
-      const priceParsed = ethers.parseUnits(currentAssetPrice.toString(), 18);
-
-      console.log("Calling on-chain contract placeOrder...", selectedAsset.code, isLong, leverage);
-      
-      const tx = await contract.placeOrder(
-        selectedAsset.code,
-        isLong,
-        sizeParsed,
-        priceParsed,
-        leverage
-      );
-      
-      console.log("Transaction broadcasted, waiting for confirmation...", tx.hash);
-      await tx.wait();
-
+ 
+    setTimeout(() => {
       setModalStatus('success');
-      const updatedAvailable = Number(Math.max(0, availableMarginRaw - currentMarginPaid).toFixed(2));
-      setAvailableMarginRaw(updatedAvailable);
-
-      const currentNotionalSize = (currentMarginPaid * leverage) / currentAssetPrice;
+      
+      // 扣除当前资产子账本中的保证金
+      setMultiBalances(prev => ({
+        ...prev,
+        [activeMarginAsset]: Math.max(0, (prev[activeMarginAsset] || 0) - currentMarginPaid)
+      }));
+ 
+      const currentNotionalSize = (marginPaidInUsdc * leverage) / currentAssetPrice;
       const currentLiqPrice = leverage === 1 
         ? 0 
         : (currentSide === 'buy' 
             ? Number((currentAssetPrice * (1 - 0.9 / leverage)).toFixed(2))
             : Number((currentAssetPrice * (1 + 0.9 / leverage)).toFixed(2)));
-
+ 
       const newPos = {
         code: selectedAsset.code,
         name: selectedAsset.code,
@@ -664,69 +685,67 @@ export default function App() {
         leverage,
         entryPrice: currentAssetPrice,
         liqPrice: currentLiqPrice,
-        margin: Number(currentMarginPaid.toFixed(2))
+        margin: Number(marginPaidInUsdc.toFixed(2)),
+        marginAsset: activeMarginAsset,
+        originalMargin: currentMarginPaid,
+        conversionRate: conversionRate
       };
       setPositions(prev => [newPos, ...prev]);
-
-    } catch (err) {
-      console.error("Smart contract call failed:", err);
-      alert("On-chain order failed or signature cancelled: " + (err.reason || err.message));
-      setModalOpen(false);
-    }
+    }, 400);
   };
-
+ 
+  // 🌟 核心升级：平仓交割时自动将盈亏折算回原币种并退回子账本（不弹小狐狸）
   const handleClosePosition = async (indexToClose) => {
     const target = positions[indexToClose];
     const currentAsset = assets.find(a => a.code === target.code);
     const currentPrice = currentAsset ? currentAsset.price : target.entryPrice;
     
-    try {
-      if (window.ethereum) {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const signer = await provider.getSigner();
-        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-        const priceParsed = ethers.parseUnits(currentPrice.toString(), 18);
-        
-        const tx = await contract.closePosition(indexToClose, priceParsed);
-        await tx.wait();
-      }
-    } catch (e) {
-      console.error("On-chain close position failed, syncing locally", e);
-    }
-
-    const pnl = target.side === 'buy'
+    // 1. 计算 USDC 计价的 PnL
+    const pnlInUsdc = target.side === 'buy'
       ? (currentPrice - target.entryPrice) * target.size
       : (target.entryPrice - currentPrice) * target.size;
-
-    const updatedMargin = Number((availableMarginRaw + target.margin + pnl).toFixed(2));
-    setAvailableMarginRaw(updatedMargin);
-    if (depositBalance > 0) {
-      setDepositBalance(prev => Number(Math.max(0, prev + pnl).toFixed(2)));
-    }
+ 
+    // 2. 根据开仓时的汇率转换率，将 USDC 盈亏与保证金无损折回原资产币种
+    const posAsset = target.marginAsset || 'USDC';
+    const convRate = target.conversionRate || 1.0;
+    
+    const originalMarginBack = target.originalMargin || (target.margin / convRate);
+    const pnlInOriginalAsset = pnlInUsdc / convRate;
+ 
+    setMultiBalances(prev => {
+      const currentAssetBal = prev[posAsset] || 0;
+      const updatedBal = Math.max(0, currentAssetBal + originalMarginBack + pnlInOriginalAsset);
+      return {
+        ...prev,
+        [posAsset]: Number(updatedBal.toFixed(2))
+      };
+    });
+ 
     setPositions(prev => prev.filter((_, idx) => idx !== indexToClose));
+    alert(`✓ Position closed successfully! PnL settled back to ${posAsset} sub-ledger.`);
   };
-
+ 
   const filteredAssets = assets.filter(item => 
     item.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (item.displayName && item.displayName.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (item.subCat && item.subCat.toLowerCase().includes(searchQuery.toLowerCase()))
   );
-
+ 
   const getTradingViewSymbol = (asset) => {
     const code = asset.code;
     const cat = asset.cat;
-
+ 
     if (cat === 'HK Equities') {
       if (code === 'HSI') return 'TVC:HSI';
       const cleanCode = parseInt(code, 10);
       return `HKEX:${cleanCode}`;
     }
-
+ 
     if (code === 'METAPLANET') return 'TOKYO:3350';
     if (code === 'BOYAA') return 'HKEX:434';
     if (code === 'ETHE') return 'ARCA:ETHE';
     if (code === 'HYPE') return 'BINANCE:HYPEUSDT';
-
+ 
     if (cat === 'Crypto') {
       if (code === 'BTC') return 'BINANCE:BTCUSDT';
       if (code === 'IBIT') return 'NASDAQ:IBIT';
@@ -767,10 +786,10 @@ export default function App() {
       if (code === 'PALLADIUM') return 'OANDA:XPDUSD';
     }
     if (cat === 'ETF') return `AMEX:${code}`;
-
+ 
     return `BINANCE:${code}USDT`;
   };
-
+ 
   const generateOrderBook = () => {
     const p = currentAssetPrice;
     const step = p * 0.0004;
@@ -784,7 +803,7 @@ export default function App() {
         depth: Math.floor(Math.random() * 80 + 10)
       });
     }
-
+ 
     let bids = [];
     for (let i = 1; i <= 5; i++) {
       bids.push({
@@ -794,12 +813,12 @@ export default function App() {
         depth: Math.floor(Math.random() * 80 + 10)
       });
     }
-
+ 
     return { asks, bids };
   };
-
+ 
   const orderBook = generateOrderBook();
-
+ 
   const getCatColor = (cat) => {
     if (cat === 'Altcoins') return '#00e5ff';
     if (cat === 'US Equities') return '#ffd166';
@@ -809,7 +828,7 @@ export default function App() {
     if (cat === 'ETF') return '#9d4edd';
     return '#888888';
   };
-
+ 
   const etfSubNames = {
     'SPY': 'SPDR S&P 500 ETF Trust',
     'QQQ': 'Invesco QQQ Trust',
@@ -825,7 +844,7 @@ export default function App() {
     'EWS': 'iShares MSCI Singapore ETF',
     'EWW': 'iShares MSCI Mexico ETF'
   };
-
+ 
   return (
     <div style={{
       backgroundColor: '#000000',
@@ -872,14 +891,26 @@ export default function App() {
           }}>
             24*7*365 Continuous Trading
           </div>
+          <div style={{
+            color: '#38bdf8',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            backgroundColor: 'rgba(56, 189, 248, 0.08)',
+            border: '1px solid rgba(56, 189, 248, 0.2)',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            letterSpacing: '1px'
+          }}>
+            Academic Sandbox
+          </div>
         </div>
-
+ 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ width: '8px', height: '8px', backgroundColor: '#00875a', borderRadius: '50%' }}></span>
-            <span style={{ color: '#888888', fontSize: '13px', fontWeight: 'bold' }}>SEI TESTNET (0x5fbdb23...)</span>
+            <span style={{ color: '#888888', fontSize: '13px', fontWeight: 'bold' }}>SEI TESTNET</span>
           </div>
-
+ 
           {!isLoggedIn ? (
             <button 
               onClick={() => setEmailModalOpen(true)}
@@ -900,7 +931,7 @@ export default function App() {
           ) : (
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button 
-                onClick={handleOpenDepositModal}
+                onClick={handleOpenFaucetModal}
                 style={{
                   backgroundColor: '#0a0307',
                   border: '1px solid #ff69b4',
@@ -912,7 +943,7 @@ export default function App() {
                   borderRadius: '4px'
                 }}
               >
-                {isRealLive ? 'Deposit USDC' : (hasClaimed ? 'Deposit USDC' : '+ Claim 1000 USDC')}
+                Claim Faucet USDC/EURC/CNH/HKD
               </button>
               <div style={{
                 backgroundColor: '#111',
@@ -946,7 +977,7 @@ export default function App() {
           )}
         </div>
       </header>
-
+ 
       {/* 主工作区 */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', width: '100%' }}>
         
@@ -978,7 +1009,7 @@ export default function App() {
               }} 
             />
           </div>
-
+ 
           <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
             {filteredAssets.map((asset, index) => {
               const isSelected = selectedAsset && selectedAsset.code === asset.code;
@@ -987,11 +1018,11 @@ export default function App() {
               const isBtcEco = asset.isBtcEco;
               const isEthEco = asset.isEthEco;
               const isEcoSystem = isBtcEco || isEthEco || isEtf;
-
+ 
               const ecoLabel = isBtcEco ? 'BTC Eco' : (isEthEco ? 'ETH Eco' : 'ETF');
               const ecoColor = isBtcEco ? '#f7931a' : (isEthEco ? '#627eea' : '#9d4edd');
               const fullEtfName = etfSubNames[asset.code] || 'Exchange Traded Fund';
-
+ 
               return (
                 <div 
                   key={`asset-item-${index}`}
@@ -1026,7 +1057,7 @@ export default function App() {
                     }}>
                       {asset.displayName || asset.code}
                     </div>
-
+ 
                     {isEcoSystem ? (
                       <div 
                         style={{ 
@@ -1076,7 +1107,7 @@ export default function App() {
                       </span>
                     )}
                   </div>
-
+ 
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <div style={{ fontWeight: 'bold', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
                       <PriceDisplay price={asset.price} currencySymbol={asset.currency || '$'} />
@@ -1090,7 +1121,7 @@ export default function App() {
             })}
           </div>
         </div>
-
+ 
         {/* 中栏（图表与持仓） */}
         <div style={{
           width: '58%',
@@ -1141,7 +1172,7 @@ export default function App() {
                       : (pos.entryPrice - currentPrice) * pos.size;
                     const pnlPercent = pos.margin > 0 ? (pnl / pos.margin) * 100 : 0;
                     const isProfit = pnl >= 0;
-
+ 
                     return (
                       <tr key={idx} style={{ borderBottom: '1px solid #111', height: '34px', fontSize: '13px' }}>
                         <td style={{ color: '#b0b0b0' }}><strong>{pos.code}</strong> <span style={{color: '#666', fontSize: '11px'}}>{pos.leverage}x</span></td>
@@ -1178,7 +1209,7 @@ export default function App() {
             )}
           </div>
         </div>
-
+ 
         {/* 右栏：交易面板与右下角控制台 */}
         <div className="custom-scrollbar" style={{
           width: '22%',
@@ -1196,7 +1227,7 @@ export default function App() {
             <span style={{ flex: 1, textAlign: 'center', padding: '4px', backgroundColor: '#111', color: '#ff69b4', fontSize: '12px', fontWeight: 'bold' }}>{leverage}x</span>
             <span style={{ flex: 1, textAlign: 'center', padding: '4px', backgroundColor: '#111', color: '#888', fontSize: '12px', fontWeight: 'bold' }}>On-Chain</span>
           </div>
-
+ 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
             
             <div style={{ 
@@ -1216,7 +1247,7 @@ export default function App() {
                 {selectedAsset ? selectedAsset.code : ''}
               </strong>
             </div>
-
+ 
             <div style={{ display: 'flex', gap: '6px', width: '100%', boxSizing: 'border-box' }}>
               <button onClick={() => setCurrentSide('buy')} style={{
                 flex: 1,
@@ -1241,15 +1272,20 @@ export default function App() {
                 textAlign: 'center'
               }}>Sell / Short</button>
             </div>
-
+ 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '6px 10px', backgroundColor: '#050505', border: '1px solid #141414', fontSize: '12px', fontWeight: 'normal', boxSizing: 'border-box', width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <span style={{ color: '#888' }}>Available Margin</span>
-                <span style={{ color: '#00875a', fontWeight: 'bold', fontVariantNumeric: 'tabular-nums' }}>${availableMargin.toFixed(2)} USDC</span>
+               <span style={{ color: '#888' }}>Available Margin ({activeMarginAsset})</span>
+               <span style={{ color: '#00875a', fontWeight: 'bold', fontVariantNumeric: 'tabular-nums' }}>
+                 {currentAssetDisplay.symbol}{dynamicAvailableMargin.toFixed(2)} {currentAssetDisplay.suffix}
+               </span>
               </div>
+ 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                 <span style={{ color: '#888' }}>Withdrawable Bal.</span>
-                <span style={{ color: '#ff69b4', fontWeight: 'bold', fontVariantNumeric: 'tabular-nums' }}>${withdrawableBalance.toFixed(2)} USDC</span>
+                <span style={{ color: '#ff69b4', fontWeight: 'bold', fontVariantNumeric: 'tabular-nums' }}>
+                  {currentAssetDisplay.symbol}{withdrawableBalance.toFixed(2)} {currentAssetDisplay.suffix}
+                </span>
               </div>
             </div>
             
@@ -1285,7 +1321,7 @@ export default function App() {
                   );
                 })}
               </div>
-
+ 
               <div style={{ 
                 backgroundColor: '#020202', 
                 border: '1px solid #1a1a1a', 
@@ -1318,18 +1354,18 @@ export default function App() {
                 <span style={{ color: '#555', fontSize: '11px', fontWeight: 'bold' }}>USDC</span>
               </div>
             </div>
-
+ 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '100%', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666', fontSize: '12px', fontWeight: 'bold', width: '100%' }}>
                 <span>Leverage {isCryptoOrMeme ? '(Crypto/Meme up to 30x)' : '(Equities up to 10x)'}</span>
                 <strong style={{ color: '#ff69b4', fontVariantNumeric: 'tabular-nums' }}>{leverage}x</strong>
               </div>
-
+ 
               <div style={{ display: 'flex', gap: '4px', width: '100%' }}>
                 {[1, 5, 10, 20, 30].map((lvl) => {
                   const isDisabled = lvl > maxAllowedLeverage;
                   const isSelected = leverage === lvl;
-
+ 
                   return (
                     <button
                       key={lvl}
@@ -1355,7 +1391,7 @@ export default function App() {
               </div>
             </div>
           </div>
-
+ 
           {/* 3. 订单薄 */}
           <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#050505', border: '1px solid #141414', padding: '6px 8px', boxSizing: 'border-box', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px', width: '100%' }}>
@@ -1368,7 +1404,7 @@ export default function App() {
               <span style={{ textAlign: 'right' }}>Size</span>
               <span style={{ textAlign: 'right' }}>Total</span>
             </div>
-
+ 
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontSize: '12px', margin: '2px 0', width: '100%' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', width: '100%' }}>
                 {orderBook.asks.map((ask, idx) => (
@@ -1380,14 +1416,14 @@ export default function App() {
                   </div>
                 ))}
               </div>
-
+ 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 6px', backgroundColor: '#080808', borderTop: '1px solid #141414', borderBottom: '1px solid #141414', margin: '2px 0', width: '100%', boxSizing: 'border-box' }}>
                 <span style={{ color: '#888', fontSize: '11px' }}>Mark Price</span>
                 <span style={{ color: selectedAsset && selectedAsset.up ? '#00875a' : '#ff0055', fontWeight: '900', fontSize: '13px', fontVariantNumeric: 'tabular-nums' }}>
                   {selectedAsset ? selectedAsset.price : 0} {selectedAsset && selectedAsset.up ? '↑' : '↓'}
                 </span>
               </div>
-
+ 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', width: '100%' }}>
                 {orderBook.bids.map((bid, idx) => (
                   <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', padding: '1px 4px', width: '100%', boxSizing: 'border-box' }}>
@@ -1400,7 +1436,7 @@ export default function App() {
               </div>
             </div>
           </div>
-
+ 
           {/* 4. 右下角：风控看板与充提按钮 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto', width: '100%', boxSizing: 'border-box' }}>
             
@@ -1422,9 +1458,9 @@ export default function App() {
                   boxShadow: '0 0 8px rgba(255, 105, 180, 0.2)'
                 }}
               >
-                {isRealLive ? 'Deposit USDC' : (hasClaimed ? 'Deposit USDC' : 'Claim 1000U Airdrop')}
+                Deposit USDC
               </button>
-
+ 
               <button 
                 onClick={() => {
                   if (!isLoggedIn) {
@@ -1434,7 +1470,7 @@ export default function App() {
                   setWithdrawModalOpen(true);
                 }}
                 style={{ 
-                  flex: 1,
+                  flex: 1, 
                   padding: '8px 0', 
                   backgroundColor: '#111215', 
                   border: '1px solid #2b2f36', 
@@ -1450,7 +1486,7 @@ export default function App() {
                 Withdraw USDC
               </button>
             </div>
-
+ 
             <button onClick={handleOpenModal} style={{
               width: '100%',
               padding: '11px 0',
@@ -1468,7 +1504,7 @@ export default function App() {
             }}>
               {currentSide === 'buy' ? `Confirm Long ${selectedAsset ? selectedAsset.code : ''}` : `Confirm Short ${selectedAsset ? selectedAsset.code : ''}`}
             </button>
-
+ 
             {/* 账户资产与风控看板 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', backgroundColor: '#050505', border: '1px solid #141414', padding: '8px 10px', fontSize: '12px', fontWeight: 'normal', width: '100%', boxSizing: 'border-box' }}>
               
@@ -1481,14 +1517,17 @@ export default function App() {
                   ${totalAccountEquity.toFixed(2)}
                 </span>
               </div>
-
+ 
               <div style={{ color: '#ff69b4', marginTop: '2px', marginBottom: '1px', letterSpacing: '0.5px', fontWeight: 'bold', width: '100%' }}>
                 Perpetual Overview
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#888', width: '100%' }}>
                 <span>Available Balance</span>
-                <span style={{ color: '#00875a', fontVariantNumeric: 'tabular-nums', fontWeight: 'bold' }}>${availableMargin.toFixed(2)}</span>
+                <span style={{ color: '#00875a', fontVariantNumeric: 'tabular-nums', fontWeight: 'bold' }}>
+                  {currentAssetDisplay.symbol}{dynamicAvailableMargin.toFixed(2)} {currentAssetDisplay.suffix}
+                </span>
               </div>
+             
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#888', width: '100%' }}>
                 <span>Position Margin Locked</span>
                 <span style={{ color: '#ff69b4', fontVariantNumeric: 'tabular-nums' }}>${lockedMarginTotal.toFixed(2)}</span>
@@ -1501,32 +1540,34 @@ export default function App() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#888', width: '100%' }}>
                 <span>Initial Capital</span>
-                <span style={{ color: '#ff69b4', fontVariantNumeric: 'tabular-nums' }}>${depositBalance.toFixed(2)}</span>
+                <span style={{ color: '#ff69b4', fontVariantNumeric: 'tabular-nums' }}>
+                  {currentAssetDisplay.symbol}{dynamicAvailableMargin.toFixed(2)} {currentAssetDisplay.suffix}
+                </span>
               </div>
             </div>
-
+ 
           </div>
-
+ 
         </div>
       </div>
-
+ 
       {/* 订单成功弹窗网关 */}
       {modalOpen && (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
           <div style={{ width: '340px', backgroundColor: '#050505', border: '1px solid #141414', padding: '24px', textAlign: 'center', borderRadius: '8px' }}>
-            <div style={{ fontSize: '13px', marginBottom: '14px', color: '#666', fontWeight: 'bold', letterSpacing: '1px' }}>BRIDGE-LAB ON-CHAIN GATEWAY</div>
+            <div style={{ fontSize: '13px', marginBottom: '14px', color: '#666', fontWeight: 'bold', letterSpacing: '1px' }}>BRIDGE-LAB DEX MATCHING ENGINE</div>
             
             {modalStatus === 'loading' ? (
               <>
                 <div style={{ width: '30px', height: '30px', border: '1px solid #111', borderTop: '1px solid #ff69b4', borderRadius: '50%', margin: '15px auto', animation: 'spin 0.8s linear infinite' }}></div>
-                <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ff69b4', marginBottom: '10px' }}>Confirm transaction in MetaMask...</div>
+                <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ff69b4', marginBottom: '10px' }}>Matching order in DEX engine...</div>
               </>
             ) : (
               <>
-                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ff69b4', marginBottom: '10px' }}>✓ On-Chain Order Matched</div>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ff69b4', marginBottom: '10px' }}>✓ Order Matched Successfully</div>
                 <div style={{ color: '#b0b0b0', fontSize: '13px', lineHeight: '1.6', marginBottom: '16px', textAlign: 'left' }}>
                   Market: {selectedAsset ? selectedAsset.code : ''} ({leverage}x)<br />
-                  Margin Deducted: {marginPaid.toFixed(2)} USDC
+                  Margin Deducted: {marginPaid.toFixed(2)} {activeMarginAsset}
                 </div>
               </>
             )}
@@ -1534,7 +1575,7 @@ export default function App() {
           </div>
         </div>
       )}
-
+ 
       {/* 邮箱注册弹窗 */}
       {emailModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
@@ -1544,7 +1585,7 @@ export default function App() {
               <h2 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#ff69b4' }}>Welcome to BridgeLab</h2>
               <p style={{ margin: 0, fontSize: '13px', color: '#888' }}>Enter your email to connect on-chain gateway</p>
             </div>
-
+ 
             <form onSubmit={handleEmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', margin: '20px 0' }}>
               <input 
                 type="text" 
@@ -1580,7 +1621,7 @@ export default function App() {
                 Connect & Sign In
               </button>
             </form>
-
+ 
             <button 
               onClick={() => setEmailModalOpen(false)}
               style={{
@@ -1593,132 +1634,154 @@ export default function App() {
             >
               Cancel
             </button>
-
+ 
           </div>
         </div>
       )}
-
-      {/* 充值 / 领取空投弹窗 */}
+ 
+      {/* 2x2 领水网格弹窗 */}
       {depositModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-          <div style={{ width: '380px', backgroundColor: '#050505', border: '1px solid #ff007a', padding: '24px', borderRadius: '12px', color: '#fff', textAlign: 'center' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(2px)' }}>
+          <div style={{ width: '420px', backgroundColor: '#050505', border: '1px solid #ff69b4', padding: '24px', borderRadius: '12px', boxShadow: '0 0 20px rgba(255, 105, 180, 0.15)' }}>
             
-            <div style={{ marginBottom: '20px' }}>
-              <h2 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#ff69b4' }}>
-                {isRealLive ? 'Deposit Test USDC (MetaMask)' : (hasClaimed ? 'Deposit Test USDC (MetaMask)' : 'Claim Newbie Airdrop USDC')}
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <h2 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#ff69b4', letterSpacing: '0.5px' }}>
+                Claim Testnet Faucet
               </h2>
-              <p style={{ margin: 0, fontSize: '13px', color: '#888' }}>Account: <span style={{ color: '#fff' }}>{registeredEmail}</span></p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#888' }}>
+                Account: <span style={{ color: '#fff' }}>{registeredEmail || '2345'}</span>
+              </p>
             </div>
-
-            {!hasClaimed && !isRealLive ? (
-              <>
-                <div style={{ margin: '20px 0', padding: '16px', background: 'rgba(255,105,180,0.05)', borderRadius: '8px', border: '1px solid rgba(255,105,180,0.2)' }}>
-                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#00875a', marginBottom: '5px' }}>+1000 USDC</div>
-                  <div style={{ fontSize: '12px', color: '#aaa' }}>
-                    Testnet special funds. Click confirm to credit your demo account.
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                  <button 
-                    onClick={() => setDepositModalOpen(false)} 
-                    style={{ flex: 1, padding: '10px', background: '#111', color: '#888', border: '1px solid #222', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
-                  >
-                    Close
-                  </button>
-                  <button 
-                    onClick={handleExecuteDeposit}
-                    disabled={isClaiming}
-                    style={{ 
-                      flex: 1, 
-                      padding: '10px', 
-                      background: '#ff69b4', 
-                      color: '#000', 
-                      border: 'none', 
-                      borderRadius: '6px', 
-                      cursor: 'pointer',
-                      fontWeight: '900',
-                      fontSize: '13px'
-                    }}
-                  >
-                    {isClaiming ? 'Syncing...' : 'Confirm 1000U'}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '10px 0', padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid #141414', textAlign: 'left' }}>
-                  <div>
-                    <span style={{ color: '#888', fontSize: '12px' }}>Wallet Balance: </span>
-                    <span style={{ fontWeight: 'bold', color: (seiBalance || 0) > 0 ? '#fff' : '#ff4d4f', fontSize: '13px' }}>
-                      {seiBalance === null ? 'Loading...' : `${(Number(seiBalance) || 0).toFixed(2)} USDC`}
-                    </span>
-                  </div>
-                  <button onClick={checkBalance} disabled={isCheckingBalance} style={{ background: 'transparent', border: '1px solid #00f2fe', color: '#00f2fe', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                    {isCheckingBalance ? 'Refreshing...' : '🔄 Refresh'}
-                  </button>
-                </div>
-
-                <div style={{ margin: '15px 0', textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: '#888', display: 'block', marginBottom: '6px' }}>Deposit Amount (Trigger MetaMask)</label>
-                  <input 
-                    type="number" 
-                    placeholder="Enter deposit amount..." 
-                    value={depositInput}
-                    onChange={(e) => setDepositInput(e.target.value)}
+ 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+              {faucetOptions.map((asset) => {
+                const isSelected = selectedFaucetAsset === asset.id;
+                return (
+                  <div 
+                    key={asset.id}
+                    onClick={() => setSelectedFaucetAsset(asset.id)}
                     style={{
-                      width: '100%',
-                      backgroundColor: '#000',
-                      border: '1px solid #333',
-                      color: '#fff',
-                      padding: '10px 12px',
-                      fontSize: '14px',
-                      outline: 'none',
-                      borderRadius: '6px',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                  <button 
-                    onClick={() => setDepositModalOpen(false)} 
-                    style={{ flex: 1, padding: '10px', background: '#111', color: '#888', border: '1px solid #222', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={handleExecuteDeposit}
-                    disabled={isClaiming}
-                    style={{ 
-                      flex: 1, 
-                      padding: '10px', 
-                      background: '#ff69b4', 
-                      color: '#000', 
-                      border: 'none', 
-                      borderRadius: '6px', 
+                      backgroundColor: isSelected ? 'rgba(255, 105, 180, 0.1)' : '#18181b',
+                      border: `1px solid ${isSelected ? '#ff69b4' : '#27272a'}`,
+                      borderRadius: '8px',
+                      padding: '12px',
                       cursor: 'pointer',
-                      fontWeight: '900',
-                      fontSize: '13px'
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      transition: 'all 0.2s ease'
                     }}
                   >
-                    {isClaiming ? 'Depositing...' : 'Confirm Deposit'}
-                  </button>
-                </div>
-              </>
-            )}
-
+                    <div style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}>
+                      {asset.name}
+                    </div>
+                    <div style={{ fontSize: '9px', color: asset.tagColor, padding: '2px 4px', backgroundColor: `${asset.tagColor}15`, borderRadius: '3px', width: 'fit-content' }}>
+                      {asset.tag}
+                    </div>
+                    <div style={{ color: '#34d399', fontSize: '13px', fontWeight: 'bold', marginTop: '2px', fontFamily: 'monospace' }}>
+                      +{asset.amount}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+ 
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <p style={{ margin: 0, fontSize: '11px', color: '#71717a' }}>
+                Testnet special funds. Select an asset to credit your sandbox account.
+              </p>
+            </div>
+ 
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setDepositModalOpen(false)}
+                style={{ flex: 1, padding: '10px', background: '#18181b', color: '#a1a1aa', border: '1px solid #27272a', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+              >
+                Close
+              </button>
+              <button
+                onClick={handleClaimFaucet}
+                disabled={isClaiming}
+                style={{ flex: 1, padding: '10px', background: '#ff69b4', color: '#000000', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+              >
+                {isClaiming ? 'Processing...' : `Confirm +${currentSelection.amount} ${currentSelection.id}`}
+              </button>
+            </div>
+ 
           </div>
         </div>
       )}
-
+ 
+      {/* 链上实盘充值输入弹窗 */}
+      {realDepositModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+          <div style={{ width: '380px', backgroundColor: '#050505', border: '1px solid #ff69b4', padding: '24px', borderRadius: '12px', color: '#fff', textAlign: 'center' }}>
+            <h2 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#ff69b4' }}>Deposit Live USDC</h2>
+            <p style={{ margin: '0 0 15px 0', fontSize: '13px', color: '#888' }}>
+              Connected Wallet: <span style={{ color: '#00875a', fontWeight: 'bold' }}>{walletAddress ? `${walletAddress.substring(0,6)}...` : 'Not Connected'}</span>
+            </p>
+ 
+            <div style={{ margin: '15px 0', textAlign: 'left' }}>
+              <label style={{ fontSize: '12px', color: '#888', display: 'block', marginBottom: '6px' }}>Deposit Amount (USDC)</label>
+              <input 
+                type="number" 
+                placeholder="Enter deposit amount..." 
+                value={depositInput}
+                onChange={(e) => setDepositInput(e.target.value)}
+                style={{
+                  width: '100%',
+                  backgroundColor: '#000',
+                  border: '1px solid #333',
+                  color: '#fff',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  borderRadius: '6px',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+            
+            <div style={{ fontSize: '11px', color: '#666', textAlign: 'left', marginBottom: '20px', lineHeight: '1.4' }}>
+              * This will trigger MetaMask to transfer testnet USDC to the treasury contract.
+            </div>
+ 
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => setRealDepositModalOpen(false)} 
+                style={{ flex: 1, padding: '10px', background: '#111', color: '#888', border: '1px solid #222', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleExecuteDeposit}
+                disabled={isClaiming}
+                style={{ 
+                  flex: 1, 
+                  padding: '10px', 
+                  background: '#ff69b4', 
+                  color: '#000', 
+                  border: 'none', 
+                  borderRadius: '6px', 
+                  cursor: 'pointer', 
+                  fontWeight: '900',
+                  fontSize: '13px'
+                }}
+              >
+                 {isClaiming ? 'Processing...' : 'Confirm Deposit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+ 
       {/* 提现弹窗网关 */}
       {withdrawModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0, 0, 0, 0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
           <div style={{ width: '380px', backgroundColor: '#050505', border: '1px solid #333', padding: '24px', borderRadius: '12px', color: '#fff', textAlign: 'center' }}>
             <h2 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#ff69b4' }}>Withdraw Funds</h2>
             <p style={{ margin: '0 0 15px 0', fontSize: '13px', color: '#888' }}>Withdrawable Balance: <span style={{ color: '#00875a', fontWeight: 'bold' }}>${withdrawableBalance.toFixed(2)} USDC</span></p>
-
+ 
             <div style={{ margin: '15px 0', textAlign: 'left' }}>
               <label style={{ fontSize: '12px', color: '#888', display: 'block', marginBottom: '6px' }}>Withdrawal Amount (USDC)</label>
               <input 
@@ -1743,7 +1806,7 @@ export default function App() {
             <div style={{ fontSize: '11px', color: '#666', textAlign: 'left', marginBottom: '20px', lineHeight: '1.4' }}>
               * Clicking confirm will trigger MetaMask popup for on-chain signature.
             </div>
-
+ 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button 
                 onClick={() => setWithdrawModalOpen(false)} 
@@ -1772,20 +1835,20 @@ export default function App() {
           </div>
         </div>
       )}
-
+ 
       <style>{`
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
+ 
         .text-up { color: #00ff88 !important; }
         .text-down { color: #ff3366 !important; }
-
+ 
         .custom-margin-input::placeholder {
           color: #555555;
           font-style: italic;
           font-weight: 300;
           font-size: 11px;
         }
-
+ 
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
           height: 4px;
@@ -1802,7 +1865,6 @@ export default function App() {
         }
       `}</style>
       
-     
     </div>
   );
 }
